@@ -25,10 +25,18 @@ enum S: String, CaseIterable {
     case lineSelected, lookingUp, dictEnglish, meaningNotFoundWith, meaningNotFound
     case translationFailedNote, translatingLine, lineNoNeed, exportNone, exportDone
     case langJaRom, langKoRom, audioOutput
-    case firstRunTitle, firstRunBody, firstRunContinue
     case jumpedTo
     case suggestJa, suggestKo, suggestApply, suggestDismiss, suggestFlash
     case tabAbout, aboutVersion, copyDiagnostics, diagCopied, diagHint, revealData, reportIssue
+    case loopSetA, loopSetB, loopClear, loopHint, loopRange, loopPickB
+    case quizButton, quizTitle, quizCheck, quizNext, quizShow, quizPlay, quizCorrect, quizWrong
+    case quizAnswerIs, quizScore, quizEmpty, quizPlaceholder
+    case copyExportMenu, copyLine, copyAll, exportSRT, exportText, copiedLine, copiedAll, exportDoneMsg, exportFailed
+    case hkCopy, menuBarCoverToggle
+    case pressKeys, recordNeedMod, recordConflict, resetShortcut, resetAllShortcuts, recordHint
+    case setupTitle, setupSubtitle, setupSpotify, setupSpotifyOk, setupSpotifyNo, setupOpenSpotify
+    case setupAutomation, setupAutoGranted, setupAutoDenied, setupAutoAsk, setupAutoWait, setupAllow
+    case setupTarget, setupPacks, setupPacksNote, setupOpenTranslation, setupLogin, setupDone, setupAllSet, openSetup
 }
 
 enum L10n {
@@ -184,9 +192,6 @@ extension L10n {
         .langJaRom: "Jepang (romaji)",
         .langKoRom: "Korea (romanisasi)",
         .audioOutput: "Output",
-        .firstRunTitle: "Terjemahkan lirik ke bahasa apa?",
-        .firstRunBody: "Lirik berbahasa lain akan diterjemahkan ke bahasa ini. Kamu bisa mengubahnya kapan saja di Pengaturan > Terjemahan, tempat bahasa juga diunduh.",
-        .firstRunContinue: "Lanjut",
         .jumpedTo: "Loncat ke %@",
         .suggestJa: "Lirik ini sepertinya romaji Jepang. Terjemahkan sebagai bahasa Jepang?",
         .suggestKo: "Lirik ini sepertinya romanisasi Korea. Terjemahkan sebagai bahasa Korea?",
@@ -199,7 +204,62 @@ extension L10n {
         .diagCopied: "Tersalin ke clipboard",
         .diagHint: "Berisi pengaturan, status izin, dan kejadian terakhir. Tidak memuat judul lagu, artis, atau lirik.",
         .revealData: "Buka folder data",
-        .reportIssue: "Laporkan masalah"
+        .reportIssue: "Laporkan masalah",
+        .loopSetA: "Awal (A)",
+        .loopSetB: "Akhir (B)",
+        .loopClear: "Hapus",
+        .loopHint: "Pilih baris, lalu atur A dan B untuk mengulang bagian itu",
+        .loopRange: "Mengulang %@ – %@",
+        .loopPickB: "A: %@. Pilih baris akhir lalu tekan B",
+        .quizButton: "Kuis",
+        .quizTitle: "Kuis isian",
+        .quizCheck: "Periksa",
+        .quizNext: "Berikutnya",
+        .quizShow: "Tampilkan jawaban",
+        .quizPlay: "Putar baris",
+        .quizCorrect: "Benar!",
+        .quizWrong: "Belum tepat, coba lagi",
+        .quizAnswerIs: "Jawabannya: %@",
+        .quizScore: "Skor: %d/%d",
+        .quizEmpty: "Belum ada lirik yang bisa dipakai untuk kuis",
+        .quizPlaceholder: "Ketik kata yang hilang",
+        .copyExportMenu: "Salin & ekspor",
+        .copyLine: "Salin baris ini",
+        .copyAll: "Salin seluruh lirik",
+        .exportSRT: "Ekspor sebagai SRT…",
+        .exportText: "Ekspor sebagai teks…",
+        .copiedLine: "Baris disalin",
+        .copiedAll: "Lirik disalin",
+        .exportDoneMsg: "Diekspor: %@",
+        .exportFailed: "Gagal menyimpan berkas",
+        .hkCopy: "Salin baris aktif",
+        .menuBarCoverToggle: "Tampilkan cover album di menu bar",
+        .pressKeys: "Tekan kombinasi tombol…",
+        .recordNeedMod: "Gunakan minimal satu tombol ⌃, ⌥, atau ⌘",
+        .recordConflict: "Sudah dipakai oleh \"%@\"",
+        .resetShortcut: "Atur ulang",
+        .resetAllShortcuts: "Atur ulang semua pintasan",
+        .recordHint: "Klik sebuah pintasan lalu tekan kombinasi barunya. Esc untuk batal.",
+        .setupTitle: "Selamat datang di SpotLyrics",
+        .setupSubtitle: "Periksa beberapa hal ini supaya lirik langsung tampil.",
+        .setupSpotify: "Spotify",
+        .setupSpotifyOk: "Spotify sedang berjalan",
+        .setupSpotifyNo: "Spotify belum dibuka",
+        .setupOpenSpotify: "Buka Spotify",
+        .setupAutomation: "Izin mengontrol Spotify",
+        .setupAutoGranted: "Diizinkan",
+        .setupAutoDenied: "Ditolak. Nyalakan di System Settings",
+        .setupAutoAsk: "Belum diminta",
+        .setupAutoWait: "Buka Spotify dulu untuk memeriksa",
+        .setupAllow: "Izinkan",
+        .setupTarget: "Terjemahkan lirik ke",
+        .setupPacks: "Paket bahasa",
+        .setupPacksNote: "Unduh bahasa dari lagu yang kamu dengarkan di Pengaturan > Terjemahan.",
+        .setupOpenTranslation: "Buka Pengaturan Terjemahan",
+        .setupLogin: "Mulai saat login (opsional)",
+        .setupDone: "Selesai",
+        .setupAllSet: "Semua siap!",
+        .openSetup: "Buka panduan awal"
     ]
 
     static let english: [S: String] = [
@@ -322,9 +382,6 @@ extension L10n {
         .langJaRom: "Japanese (romaji)",
         .langKoRom: "Korean (romanization)",
         .audioOutput: "Output",
-        .firstRunTitle: "Translate lyrics into which language?",
-        .firstRunBody: "Lyrics in other languages will be translated into this language. You can change it any time in Settings > Translation, where languages are also downloaded.",
-        .firstRunContinue: "Continue",
         .jumpedTo: "Jumped to %@",
         .suggestJa: "These lyrics look like romanized Japanese. Translate them as Japanese?",
         .suggestKo: "These lyrics look like romanized Korean. Translate them as Korean?",
@@ -337,7 +394,62 @@ extension L10n {
         .diagCopied: "Copied to clipboard",
         .diagHint: "Contains settings, permission status, and recent events. No song titles, artists, or lyrics.",
         .revealData: "Show data folder",
-        .reportIssue: "Report an issue"
+        .reportIssue: "Report an issue",
+        .loopSetA: "Start (A)",
+        .loopSetB: "End (B)",
+        .loopClear: "Clear",
+        .loopHint: "Select a line, then set A and B to loop that part",
+        .loopRange: "Looping %@ – %@",
+        .loopPickB: "A: %@. Select the end line and press B",
+        .quizButton: "Quiz",
+        .quizTitle: "Fill-in-the-blank quiz",
+        .quizCheck: "Check",
+        .quizNext: "Next",
+        .quizShow: "Show answer",
+        .quizPlay: "Play line",
+        .quizCorrect: "Correct!",
+        .quizWrong: "Not quite, try again",
+        .quizAnswerIs: "The answer is: %@",
+        .quizScore: "Score: %d/%d",
+        .quizEmpty: "No lyrics available for a quiz yet",
+        .quizPlaceholder: "Type the missing word",
+        .copyExportMenu: "Copy & export",
+        .copyLine: "Copy this line",
+        .copyAll: "Copy all lyrics",
+        .exportSRT: "Export as SRT…",
+        .exportText: "Export as text…",
+        .copiedLine: "Line copied",
+        .copiedAll: "Lyrics copied",
+        .exportDoneMsg: "Exported: %@",
+        .exportFailed: "Couldn't save the file",
+        .hkCopy: "Copy current line",
+        .menuBarCoverToggle: "Show the album cover in the menu bar",
+        .pressKeys: "Press a key combination…",
+        .recordNeedMod: "Use at least one of ⌃, ⌥, or ⌘",
+        .recordConflict: "Already used by \"%@\"",
+        .resetShortcut: "Reset",
+        .resetAllShortcuts: "Reset all shortcuts",
+        .recordHint: "Click a shortcut, then press the new combination. Esc cancels.",
+        .setupTitle: "Welcome to SpotLyrics",
+        .setupSubtitle: "Check these few things so lyrics show up right away.",
+        .setupSpotify: "Spotify",
+        .setupSpotifyOk: "Spotify is running",
+        .setupSpotifyNo: "Spotify isn't open yet",
+        .setupOpenSpotify: "Open Spotify",
+        .setupAutomation: "Permission to control Spotify",
+        .setupAutoGranted: "Allowed",
+        .setupAutoDenied: "Denied. Turn it on in System Settings",
+        .setupAutoAsk: "Not asked yet",
+        .setupAutoWait: "Open Spotify first to check",
+        .setupAllow: "Allow",
+        .setupTarget: "Translate lyrics into",
+        .setupPacks: "Language packs",
+        .setupPacksNote: "Download the languages of the songs you listen to in Settings > Translation.",
+        .setupOpenTranslation: "Open Translation settings",
+        .setupLogin: "Launch at login (optional)",
+        .setupDone: "Done",
+        .setupAllSet: "All set!",
+        .openSetup: "Open the setup guide"
     ]
 }
 
