@@ -26,6 +26,9 @@ enum S: String, CaseIterable {
     case translationFailedNote, translatingLine, lineNoNeed, exportNone, exportDone
     case langJaRom, langKoRom, audioOutput
     case firstRunTitle, firstRunBody, firstRunContinue
+    case jumpedTo
+    case suggestJa, suggestKo, suggestApply, suggestDismiss, suggestFlash
+    case tabAbout, aboutVersion, copyDiagnostics, diagCopied, diagHint, revealData, reportIssue
 }
 
 enum L10n {
@@ -163,7 +166,7 @@ extension L10n {
         .failedWith: "Gagal: %@",
         .learnWindow: "Belajar",
         .learnWindowSong: "Belajar: %@",
-        .learnHint: "Klik kata di lirik untuk lihat arti. Klik baris lalu \"Terjemahkan\" untuk terjemahan baris itu.",
+        .learnHint: "Klik kata di lirik untuk lihat arti. Klik baris lalu \"Terjemahkan\" untuk terjemahan baris itu. Klik dua kali pada baris untuk loncat ke detik itu di lagu.",
         .btnTranslate: "Terjemahkan",
         .btnSaveWord: "Simpan kata",
         .btnExportAnki: "Ekspor Anki",
@@ -183,7 +186,20 @@ extension L10n {
         .audioOutput: "Output",
         .firstRunTitle: "Terjemahkan lirik ke bahasa apa?",
         .firstRunBody: "Lirik berbahasa lain akan diterjemahkan ke bahasa ini. Kamu bisa mengubahnya kapan saja di Pengaturan > Terjemahan, tempat bahasa juga diunduh.",
-        .firstRunContinue: "Lanjut"
+        .firstRunContinue: "Lanjut",
+        .jumpedTo: "Loncat ke %@",
+        .suggestJa: "Lirik ini sepertinya romaji Jepang. Terjemahkan sebagai bahasa Jepang?",
+        .suggestKo: "Lirik ini sepertinya romanisasi Korea. Terjemahkan sebagai bahasa Korea?",
+        .suggestApply: "Ya, ganti",
+        .suggestDismiss: "Abaikan",
+        .suggestFlash: "Lirik romaji terdeteksi, buka menu untuk mengganti",
+        .tabAbout: "Tentang",
+        .aboutVersion: "Versi %@",
+        .copyDiagnostics: "Salin diagnostik",
+        .diagCopied: "Tersalin ke clipboard",
+        .diagHint: "Berisi pengaturan, status izin, dan kejadian terakhir. Tidak memuat judul lagu, artis, atau lirik.",
+        .revealData: "Buka folder data",
+        .reportIssue: "Laporkan masalah"
     ]
 
     static let english: [S: String] = [
@@ -288,7 +304,7 @@ extension L10n {
         .failedWith: "Failed: %@",
         .learnWindow: "Study",
         .learnWindowSong: "Study: %@",
-        .learnHint: "Click a word in the lyrics to see its meaning. Click a line, then \"Translate\", to translate that line.",
+        .learnHint: "Click a word in the lyrics to see its meaning. Click a line, then \"Translate\", to translate that line. Double-click a line to jump to that moment in the song.",
         .btnTranslate: "Translate",
         .btnSaveWord: "Save word",
         .btnExportAnki: "Export to Anki",
@@ -308,7 +324,20 @@ extension L10n {
         .audioOutput: "Output",
         .firstRunTitle: "Translate lyrics into which language?",
         .firstRunBody: "Lyrics in other languages will be translated into this language. You can change it any time in Settings > Translation, where languages are also downloaded.",
-        .firstRunContinue: "Continue"
+        .firstRunContinue: "Continue",
+        .jumpedTo: "Jumped to %@",
+        .suggestJa: "These lyrics look like romanized Japanese. Translate them as Japanese?",
+        .suggestKo: "These lyrics look like romanized Korean. Translate them as Korean?",
+        .suggestApply: "Yes, switch",
+        .suggestDismiss: "Dismiss",
+        .suggestFlash: "Romanized lyrics detected, open the menu to switch",
+        .tabAbout: "About",
+        .aboutVersion: "Version %@",
+        .copyDiagnostics: "Copy diagnostics",
+        .diagCopied: "Copied to clipboard",
+        .diagHint: "Contains settings, permission status, and recent events. No song titles, artists, or lyrics.",
+        .revealData: "Show data folder",
+        .reportIssue: "Report an issue"
     ]
 }
 

@@ -301,5 +301,84 @@ eq(Prefs.defaultTarget(appLanguage: "system", preferred: ["sw-KE"]), "en", "defa
 eq(Prefs.defaultTarget(appLanguage: "system", preferred: []), "en", "defaultTarget: kosong")
 check(Prefs.supportedTargets.contains("id") && Prefs.supportedTargets.contains("en"), "supportedTargets memuat id dan en")
 
+eq(Playback.effective(posMs: 10000, offset: 0), 10.25, "effective: tanpa offset")
+eq(Playback.effective(posMs: 10000, offset: -0.2), 10.05, "effective: offset negatif")
+for off in [0.0, -0.2, 0.3] {
+    let raw = Playback.rawPosition(forLineTime: 42.0, offset: off)
+    let eff = Playback.effective(posMs: Int((raw * 1000).rounded()), offset: off)
+    check(eff >= 42.0 && eff < 42.1, "rawPosition: baris langsung aktif setelah loncat (offset \(off))")
+}
+eq(Playback.rawPosition(forLineTime: 0.1, offset: 0), 0, "rawPosition: tidak negatif")
+
+let jaRomaji = ["kimi no koe ga suki da yo", "boku wa itsumo kimi wo omotte iru", "sayonara to ienai mama de",
+    "kokoro no naka de yume wo miteru", "mou ichido aitai yo kimi ni", "namida ga tomaranai yoru ni", "hikari no naka e aruite iku",
+    "sekai ga owaranai you ni to", "zutto zutto kimi no soba ni itai", "ima demo kimi wo omotteru yo", "tsuki ga kirei da ne to itta",
+    "motto motto tsuyoku naritai"]
+let koRomaja = ["naneun neol saranghae haeyo", "geudaega isseoseo haengbokhae", "nae maeumeun neoreul gidaryeo",
+    "wae geureoke eotteoke haneun geonde", "jigeum geu sunganeul gidaryeo", "uri hamkke haneul bwa", "neomu bogosipeo jeongmal",
+    "oneul bamdo neoui norae", "naega neol saranghaneun geol", "mianhae gomawo saranghae", "nunmuri meomchuji anha", "geunyang geureoke hajiman"]
+let english = ["I wanna be your baby tonight", "Take me to the place where we belong", "Oh baby baby don't you leave me now",
+    "We could dance until the morning light", "You and I against the world", "Tell me what you want to do", "I can feel it in my heart",
+    "Hold me close and never let go", "The night is young and so are we", "Say you'll stay with me tonight", "Nothing else matters to me",
+    "Running through the rain with you"]
+let spanish = ["te quiero mucho mi amor", "no puedo vivir sin ti", "la noche es larga sin tu voz", "bailemos juntos esta noche",
+    "dime que me quieres otra vez", "tu mirada me da la vida", "yo sin ti no soy nada", "vamos a cantar toda la noche",
+    "me gusta cuando tu me besas", "el corazon no sabe mentir", "todo lo que quiero eres tu", "contigo quiero estar siempre"]
+let indonesian = ["aku tidak bisa hidup tanpamu", "kamu selalu ada di hatiku", "ayo kita pergi ke pantai malam ini", "jangan pernah tinggalkan aku sendiri",
+    "kita berdua akan selalu bersama", "hujan turun di kota yang sepi", "sampai kapan kau membuatku menunggu", "semua yang kuinginkan hanya dirimu",
+    "bintang di langit menjadi saksi", "ga mau pergi dari sini", "ku nyanyikan lagu ini untukmu", "waktu berjalan begitu cepat"]
+let nativeJa = ["君の声が好きだよ", "ぼくはいつも君を想ってる", "さよならと言えないまま", "心の中で夢を見てる", "もう一度会いたいよ", "涙が止まらない夜に", "光の中へ歩いていく"]
+
+eq(Romanized.guess(jaRomaji), "ja-rom", "romanized: romaji Jepang")
+eq(Romanized.guess(koRomaja), "ko-rom", "romanized: romanisasi Korea")
+eq(Romanized.guess(english), nil, "romanized: Inggris bukan romanisasi")
+eq(Romanized.guess(spanish), nil, "romanized: Spanyol bukan romanisasi")
+eq(Romanized.guess(indonesian), nil, "romanized: Indonesia bukan romanisasi")
+eq(Romanized.guess(nativeJa), nil, "romanized: aksara asli tidak perlu saran")
+eq(Romanized.guess(Array(jaRomaji.prefix(3))), nil, "romanized: terlalu sedikit baris")
+eq(Romanized.guess([]), nil, "romanized: kosong")
+eq(Romanized.guess(jaRomaji + english), "ja-rom", "romanized: campuran Jepang dominan")
+eq(Romanized.guess(english + english + Array(jaRomaji.prefix(2))), nil, "romanized: sedikit romaji di lagu Inggris diabaikan")
+eq(Romanized.guess(jaRomaji.map { $0.uppercased() }), "ja-rom", "romanized: huruf besar")
+
+check(!Prefs.isRomanizedDismissed("a|b"), "dismiss: belum diabaikan")
+Prefs.dismissRomanized("a|b")
+check(Prefs.isRomanizedDismissed("a|b"), "dismiss: tersimpan")
+check(!Prefs.isRomanizedDismissed("c|d"), "dismiss: lagu lain tidak terpengaruh")
+Prefs.dismissRomanized("a|b")
+eq((UserDefaults.standard.stringArray(forKey: "romDismissed") ?? []).count, 1, "dismiss: tanpa duplikat")
+for i in 0..<600 { Prefs.dismissRomanized("lagu\(i)") }
+check((UserDefaults.standard.stringArray(forKey: "romDismissed") ?? []).count <= 500, "dismiss: daftar dibatasi")
+UserDefaults.standard.removeObject(forKey: "romDismissed")
+
+Diagnostics.reset()
+eq(Diagnostics.recent.count, 0, "diagnostics: awal kosong")
+Diagnostics.log("satu", now: Date(timeIntervalSince1970: 0))
+Diagnostics.log("dua")
+eq(Diagnostics.recent.count, 2, "diagnostics: dua entri")
+check(Diagnostics.recent[1].hasSuffix("dua"), "diagnostics: urutan terjaga")
+for i in 0..<100 { Diagnostics.log("e\(i)") }
+eq(Diagnostics.recent.count, Diagnostics.capacity, "diagnostics: dibatasi kapasitas")
+check(Diagnostics.recent.last?.hasSuffix("e99") ?? false, "diagnostics: entri terbaru dipertahankan")
+check(!Diagnostics.recent.contains { $0.hasSuffix("satu") }, "diagnostics: entri tertua dibuang")
+Diagnostics.reset()
+eq(Diagnostics.redact("/Users/siapa/Library/x", home: "/Users/siapa"), "~/Library/x", "redact: jalur rumah disamarkan")
+eq(Diagnostics.redact("tanpa jalur", home: "/Users/siapa"), "tanpa jalur", "redact: teks lain tetap")
+eq(Diagnostics.redact("abc", home: "/"), "abc", "redact: root tidak mengubah apa pun")
+let rep = Diagnostics.report(sections: [("App", [("Version", "1.0"), ("Path", "/Users/siapa/x")])], recent: ["12:00:00  hello"], home: "/Users/siapa")
+check(rep.contains("[App]") && rep.contains("Version: 1.0"), "report: bagian dan baris")
+check(rep.contains("Path: ~/x") && !rep.contains("/Users/siapa"), "report: jalur rumah tidak bocor")
+check(rep.contains("[Recent events]") && rep.contains("12:00:00  hello"), "report: kejadian terakhir")
+check(Diagnostics.report(sections: [], recent: [], home: "/x").contains("(none)"), "report: tanpa kejadian")
+eq(Diagnostics.size(500), "500 B", "size: byte")
+eq(Diagnostics.size(2048), "2.0 KB", "size: kilobyte")
+eq(Diagnostics.size(3 * 1024 * 1024), "3.0 MB", "size: megabyte")
+let statsBefore = Store.cacheStats()
+Store.writeLyrics("__tes_stats__|x|1", [Line(time: 1, text: "a")])
+let statsAfter = Store.cacheStats()
+check(statsAfter.lyricsCount == statsBefore.lyricsCount + 1, "cacheStats: menghitung berkas lirik baru")
+check(statsAfter.lyricsBytes > statsBefore.lyricsBytes, "cacheStats: ukuran bertambah")
+try? FileManager.default.removeItem(at: Store.lyricsFile("__tes_stats__|x|1"))
+
 print("\(total - failures)/\(total) passed")
 exit(failures == 0 ? 0 : 1)
