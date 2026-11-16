@@ -20,6 +20,7 @@ struct PlayerReading: Equatable {
     }
 
     var isAd: Bool { PlayerReading.isAd(title: title, artist: artist, adURL: adURL) }
+    var isEpisode: Bool { adURL.hasPrefix("spotify:episode") }
 }
 
 extension Snap {
@@ -29,6 +30,7 @@ extension Snap {
     }
 
     var isAd: Bool { PlayerReading.isAd(title: title, artist: artist, adURL: adURL) }
+    var isEpisode: Bool { adURL.hasPrefix("spotify:episode") }
 }
 
 struct LyricsResult: Equatable {
@@ -41,5 +43,7 @@ struct CachedLyrics: Codable {
     let saved: Date
     let lines: [Line]
     let synced: Bool?
+    let pinned: Bool?
     var isSynced: Bool { synced ?? true }
+    var isPinned: Bool { pinned ?? false }
 }
