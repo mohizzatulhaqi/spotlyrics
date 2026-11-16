@@ -68,6 +68,33 @@ enum Prefs {
         if !a.contains(key) { a.append(key) }
         UserDefaults.standard.set(Array(a.suffix(500)), forKey: "romDismissed")
     }
+    static var menuBarCover: Bool {
+        get { UserDefaults.standard.object(forKey: "menuBarCover") as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: "menuBarCover") }
+    }
+    static var setupDone: Bool {
+        get { UserDefaults.standard.bool(forKey: "setupDone") }
+        set { UserDefaults.standard.set(newValue, forKey: "setupDone") }
+    }
+
+    static func hotKeyCombo(id: Int, default d: KeyCombo) -> KeyCombo {
+        guard let dict = UserDefaults.standard.dictionary(forKey: "hotKeyCombos") as? [String: [Int]],
+              let v = dict[String(id)], let c = KeyCombo(storage: v) else { return d }
+        return c
+    }
+
+    static func hasCustomHotKey(id: Int) -> Bool {
+        ((UserDefaults.standard.dictionary(forKey: "hotKeyCombos") as? [String: [Int]]) ?? [:])[String(id)] != nil
+    }
+
+    static func setHotKeyCombo(id: Int, _ c: KeyCombo?) {
+        var dict = (UserDefaults.standard.dictionary(forKey: "hotKeyCombos") as? [String: [Int]]) ?? [:]
+        dict[String(id)] = c?.storage
+        UserDefaults.standard.set(dict, forKey: "hotKeyCombos")
+    }
+
+    static func resetHotKeys() { UserDefaults.standard.removeObject(forKey: "hotKeyCombos") }
+
     static var coverAccent: Bool {
         get { UserDefaults.standard.object(forKey: "coverAccent") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "coverAccent") }

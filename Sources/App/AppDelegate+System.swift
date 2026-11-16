@@ -28,31 +28,6 @@ extension AppDelegate {
         NSApp.mainMenu = main
     }
 
-    func askTargetIfNeeded() {
-        guard !Prefs.hasChosenTarget else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
-            guard let self = self, !Prefs.hasChosenTarget else { return }
-            NSApp.activate(ignoringOtherApps: true)
-            let current = Prefs.target
-            let options = Prefs.supportedTargets
-                .map { (id: $0, name: Lang.name($0)) }
-                .sorted { $0.name.localizedCompare($1.name) == .orderedAscending }
-            let a = NSAlert()
-            a.messageText = L(.firstRunTitle)
-            a.informativeText = L(.firstRunBody)
-            let pop = NSPopUpButton(frame: NSRect(x: 0, y: 0, width: 240, height: 26), pullsDown: false)
-            for o in options { pop.addItem(withTitle: o.name) }
-            if let i = options.firstIndex(where: { Lang.same($0.id, current) }) { pop.selectItem(at: i) }
-            a.accessoryView = pop
-            a.addButton(withTitle: L(.firstRunContinue))
-            a.runModal()
-            let picked = options[max(0, pop.indexOfSelectedItem)].id
-            Prefs.target = picked
-            self.langChanged()
-            self.refreshSettings()
-        }
-    }
-
     func warnAutomation() {
         guard !shownAutomationAlert else { return }
         shownAutomationAlert = true

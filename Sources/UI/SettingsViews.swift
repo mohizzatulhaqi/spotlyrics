@@ -12,6 +12,9 @@ final class SettingsModel: ObservableObject {
     @Published var romaji = Prefs.showRomaji {
         didSet { if !syncing { Prefs.showRomaji = romaji; onRomaji() } }
     }
+    @Published var menuCover = Prefs.menuBarCover {
+        didSet { if !syncing { Prefs.menuBarCover = menuCover; onMenuCover() } }
+    }
     @Published var accent = Prefs.coverAccent {
         didSet { if !syncing { Prefs.coverAccent = accent; onAccent() } }
     }
@@ -31,9 +34,15 @@ final class SettingsModel: ObservableObject {
     @Published var diagCopied = false
     @Published var loginAvailable = true
     @Published var loginNote = ""
-    @Published var hotKeyLines: [String] = []
+    @Published var shortcuts: [ShortcutRow] = []
+    @Published var recordingId: Int?
+    @Published var recordMessage = ""
     private var syncing = false
     var onTab: (String) -> Void = { _ in }
+    var onRecord: (Int) -> Void = { _ in }
+    var onResetShortcut: (Int) -> Void = { _ in }
+    var onResetAllShortcuts: () -> Void = {}
+    var onOpenSetup: () -> Void = {}
     var onCopyDiagnostics: () -> Void = {}
     var onRevealData: () -> Void = {}
     let versionText: String = {
@@ -53,6 +62,7 @@ final class SettingsModel: ObservableObject {
     var onCasual: () -> Void = {}
     var onRomaji: () -> Void = {}
     var onAccent: () -> Void = {}
+    var onMenuCover: () -> Void = {}
     var onFloat: (Bool) -> Void = { _ in }
     var onLogin: (Bool) -> Void = { _ in }
     var onHotKeys: (Bool) -> Void = { _ in }
@@ -60,25 +70,26 @@ final class SettingsModel: ObservableObject {
     nonisolated static func height(for tab: String) -> CGFloat {
         switch tab {
         case "terjemahan": return 720
-        case "pintasan": return 370
+        case "pintasan": return 480
         case "tentang": return 340
         case "tampilan": return 300
         default: return 300
         }
     }
 
-    func sync(floatOn f: Bool, login l: Bool, loginAvailable a: Bool, loginNote n: String, hotKeysOn h: Bool, hotKeyLines lines: [String]) {
+    func sync(floatOn f: Bool, login l: Bool, loginAvailable a: Bool, loginNote n: String, hotKeysOn h: Bool, shortcuts rows: [ShortcutRow]) {
         syncing = true
         appLang = Prefs.appLanguage
         casual = Prefs.casual
         romaji = Prefs.showRomaji
         accent = Prefs.coverAccent
+        menuCover = Prefs.menuBarCover
         floatOn = f
         login = l
         loginAvailable = a
         loginNote = n
         hotKeysOn = h
-        hotKeyLines = lines
+        shortcuts = rows
         syncing = false
     }
 }
@@ -143,6 +154,7 @@ struct SettingsView: View {
                 Text(L(.romajiNote))
                     .font(.caption).foregroundStyle(.secondary)
                 Toggle(L(.accentToggle), isOn: $s.accent)
+                Toggle(L(.menuBarCoverToggle), isOn: $s.menuCover)
             }
         }
         .formStyle(.grouped)
@@ -170,6 +182,7 @@ struct SettingsView: View {
                 }
                 Text(L(.diagHint)).font(.caption).foregroundStyle(.secondary)
                 Button(L(.revealData)) { s.onRevealData() }
+                Button(L(.openSetup)) { s.onOpenSetup() }
                 if let url = URL(string: "https://github.com/mohizzatulhaqi/spotlyrics/issues") {
                     Link(L(.reportIssue), destination: url)
                 }
@@ -184,9 +197,23 @@ struct SettingsView: View {
                 Toggle(L(.hotkeysToggle), isOn: $s.hotKeysOn)
             }
             Section {
-                ForEach(s.hotKeyLines, id: \.self) { l in
-                    Text(l).font(.system(size: 12, design: .monospaced))
+                ForEach(s.shortcuts) { row in
+                    HStack(spacing: 8) {
+                        Text(row.title)
+                        Spacer()
+                        if row.taken { Text(L(.hotkeyTaken)).font(.caption).foregroundStyle(.orange) }
+                        Button(s.recordingId == row.id ? L(.pressKeys) : row.combo) { s.onRecord(row.id) }
+                            .font(.system(size: 12, design: .monospaced))
+                        if row.custom {
+                            Button(L(.resetShortcut)) { s.onResetShortcut(row.id) }.controlSize(.small)
+                        }
+                    }
                 }
+                if !s.recordMessage.isEmpty {
+                    Text(s.recordMessage).font(.caption).foregroundStyle(.red)
+                }
+                Text(L(.recordHint)).font(.caption).foregroundStyle(.secondary)
+                Button(L(.resetAllShortcuts)) { s.onResetAllShortcuts() }
             }
         }
         .formStyle(.grouped)

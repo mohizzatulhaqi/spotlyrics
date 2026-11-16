@@ -22,7 +22,8 @@ extension AppDelegate {
         hotFailed = []
         for h in hotKeys {
             var ref: EventHotKeyRef?
-            let st = RegisterEventHotKey(h.code, UInt32(controlKey | optionKey), EventHotKeyID(signature: OSType(0x53504C59), id: h.id),
+            let c = h.combo
+            let st = RegisterEventHotKey(c.code, c.modifiers, EventHotKeyID(signature: OSType(0x53504C59), id: h.id),
                                          GetApplicationEventTarget(), 0, &ref)
             if st == noErr, let r = ref { hotRefs.append(r) } else { hotFailed.insert(h.id) }
         }
@@ -41,11 +42,79 @@ extension AppDelegate {
         refreshSettings()
     }
 
-    func hotKeyLines() -> [String] {
+    func shortcutRows() -> [ShortcutRow] {
         hotKeys.map { h in
-            let note = hotFailed.contains(h.id) ? "  " + L(.hotkeyTaken) : ""
-            return "⌃⌥\(h.symbol)   \(h.title)\(note)"
+            ShortcutRow(id: Int(h.id), title: h.title, combo: h.combo.display,
+                        taken: hotFailed.contains(h.id), custom: Prefs.hasCustomHotKey(id: Int(h.id)))
         }
+    }
+
+    func startRecordingShortcut(_ id: Int) {
+        stopRecordingShortcut()
+        unregisterHotKeys()
+        recordingId = id
+        MainActor.assumeIsolated {
+            settingsModel?.recordingId = id
+            settingsModel?.recordMessage = ""
+        }
+        recordMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] e in
+            guard let s = self, let id = s.recordingId else { return e }
+            let code = UInt32(e.keyCode)
+            if code == 53 {
+                s.stopRecordingShortcut()
+                return nil
+            }
+            var mods: UInt32 = 0
+            let f = e.modifierFlags
+            if f.contains(.control) { mods |= KeyCombo.control }
+            if f.contains(.option) { mods |= KeyCombo.option }
+            if f.contains(.shift) { mods |= KeyCombo.shift }
+            if f.contains(.command) { mods |= KeyCombo.command }
+            let combo = KeyCombo(code: code, modifiers: mods)
+            guard combo.hasRequiredModifier else {
+                MainActor.assumeIsolated { s.settingsModel?.recordMessage = L(.recordNeedMod) }
+                return nil
+            }
+            var current: [Int: KeyCombo] = [:]
+            for h in s.hotKeys { current[Int(h.id)] = h.combo }
+            if let other = HotKeyRules.conflict(for: combo, excluding: id, current: current),
+               let spec = s.hotKeys.first(where: { Int($0.id) == other }) {
+                MainActor.assumeIsolated { s.settingsModel?.recordMessage = L(.recordConflict, spec.title) }
+                return nil
+            }
+            let isDefault = s.hotKeys.first(where: { Int($0.id) == id })?.defaultCombo == combo
+            Prefs.setHotKeyCombo(id: id, isDefault ? nil : combo)
+            s.stopRecordingShortcut()
+            return nil
+        }
+    }
+
+    func stopRecordingShortcut() {
+        guard recordingId != nil || recordMonitor != nil else { return }
+        if let m = recordMonitor { NSEvent.removeMonitor(m) }
+        recordMonitor = nil
+        recordingId = nil
+        MainActor.assumeIsolated {
+            settingsModel?.recordingId = nil
+            settingsModel?.recordMessage = ""
+        }
+        unregisterHotKeys()
+        if hotKeysOn { registerHotKeys() }
+        refreshSettings()
+    }
+
+    func resetShortcut(_ id: Int) {
+        Prefs.setHotKeyCombo(id: id, nil)
+        unregisterHotKeys()
+        if hotKeysOn { registerHotKeys() }
+        refreshSettings()
+    }
+
+    func resetAllShortcuts() {
+        Prefs.resetHotKeys()
+        unregisterHotKeys()
+        if hotKeysOn { registerHotKeys() }
+        refreshSettings()
     }
 
     func flash(_ t: String) {
@@ -79,6 +148,8 @@ extension AppDelegate {
             faster()
             syncOffsetText()
             flash(L(.offsetMsg, offset))
+        case 6:
+            copyCurrentLine()
         default: break
         }
     }
