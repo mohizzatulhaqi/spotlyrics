@@ -12,6 +12,7 @@ final class QuizModel: ObservableObject {
     @Published var empty = false
     @Published var langTick = 0
     var onPlay: (Int) -> Void = { _ in }
+    var onSpeak: (Int) -> Void = { _ in }
     private var lines: [String] = []
     private var translations: [String] = []
     private var counted = false
@@ -111,6 +112,7 @@ struct QuizView: View {
                         .disabled(m.status == 1 || m.status == 3)
                     Button(L(.quizShow)) { m.reveal() }.disabled(m.status == 1 || m.status == 3)
                     Button(L(.quizPlay)) { m.onPlay(it.lineIndex) }
+                    Button(L(.quizSpeak)) { m.onSpeak(it.lineIndex) }
                     Spacer()
                     Button(L(.quizNext)) { m.next() }
                 }

@@ -1,4 +1,5 @@
 import Cocoa
+import AVFoundation
 
 // MARK: - Study window (click a word)
 
@@ -48,6 +49,8 @@ final class LearnPanel: NSObject, @unchecked Sendable {
     var translateBtn: NSButton!
     var saveBtn: NSButton!
     var exportBtn: NSButton!
+    var speakBtn: NSButton!
+    let speaker = Speaker()
     var lastMeaningFound = false
     var times: [Double] = []
     var onSeek: (Double) -> Void = { _ in }
@@ -140,12 +143,17 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         cv.addSubview(loopLabel)
         updateLoopUI()
 
-        translateBtn = button(L(.btnTranslate), NSRect(x: 10, y: 12, width: 110, height: 30), #selector(translateLineAction))
-        saveBtn = button(L(.btnSaveWord), NSRect(x: 128, y: 12, width: 100, height: 30), #selector(saveWord))
-        exportBtn = button(L(.btnExportAnki), NSRect(x: 236, y: 12, width: 100, height: 30), #selector(exportAnki))
-        for b in [translateBtn!, saveBtn!, exportBtn!] { cv.addSubview(b) }
+        translateBtn = button(L(.btnTranslate), NSRect(x: 10, y: 12, width: 94, height: 30), #selector(translateLineAction))
+        saveBtn = button(L(.btnSaveWord), NSRect(x: 108, y: 12, width: 86, height: 30), #selector(saveWord))
+        exportBtn = button(L(.btnExportAnki), NSRect(x: 198, y: 12, width: 92, height: 30), #selector(exportAnki))
+        speakBtn = button(L(.btnSpeak), NSRect(x: 294, y: 12, width: 72, height: 30), #selector(speakAction))
+        for b in [translateBtn!, saveBtn!, exportBtn!, speakBtn!] {
+            b.controlSize = .small
+            b.font = .systemFont(ofSize: 11)
+            cv.addSubview(b)
+        }
         countLabel = NSTextField(labelWithString: "")
-        countLabel.frame = NSRect(x: 346, y: 18, width: 165, height: 18)
+        countLabel.frame = NSRect(x: 374, y: 18, width: 138, height: 18)
         countLabel.font = .systemFont(ofSize: 11)
         countLabel.textColor = .secondaryLabelColor
         countLabel.autoresizingMask = [.maxYMargin]
@@ -168,6 +176,7 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         loopClearBtn.title = L(.loopClear)
         quizBtn.title = L(.quizButton)
         updateLoopUI()
+        speakBtn.title = L(.btnSpeak)
         translateBtn.title = L(.btnTranslate)
         saveBtn.title = L(.btnSaveWord)
         exportBtn.title = L(.btnExportAnki)
@@ -366,6 +375,17 @@ final class LearnPanel: NSObject, @unchecked Sendable {
             } catch { r = L(.failedWith, Translator.friendly(error)) }
             let out = r
             DispatchQueue.main.async { self.show(out) }
+        }
+    }
+
+    @objc func speakAction() {
+        let line = (lastLine?.isEmpty == false) ? lastLine! : currentLineText
+        let text = lastWord ?? line
+        guard !text.isEmpty, text != "♪" else { NSSound.beep(); return }
+        switch speaker.speak(prep(text), language: langFor(line)) {
+        case .noVoice(let code): show(L(.noVoice, Lang.name(code)))
+        case .empty: NSSound.beep()
+        default: break
         }
     }
 
