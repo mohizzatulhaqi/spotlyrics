@@ -34,6 +34,10 @@ enum S: String, CaseIterable {
     case copyExportMenu, copyLine, copyAll, exportSRT, exportText, copiedLine, copiedAll, exportDoneMsg, exportFailed
     case hkCopy, menuBarCoverToggle, lyricsNotSynced
     case btnSpeak, noVoice, quizSpeak
+    case vocabMenu, vocabTitle, vocabSearch, vocabAllSongs, colWord, colMeaning, colSong, colAdded, vocabEmpty, vocabNoMatch
+    case vocabDeleteOne, vocabExportOne
+    case vocabDelete, vocabDeleteAsk, vocabDeleteNote, vocabPickOne, vocabStats, vocabReverse, vocabExportN
+    case vocabLineLabel, vocabMeaningLabel
     case exportApkgItem, exportTsvItem, exportCsvItem, apkgWorking, apkgProgress, apkgDone, apkgNoVoice, exportFileDone
     case playerLabel, playerAuto, playerSpotify, playerMusic, podcastNoLyrics
     case readingStyleLabel, readingRomaji, readingFurigana, readingStyleNote
@@ -240,6 +244,27 @@ extension L10n {
         .hkCopy: "Salin baris aktif",
         .menuBarCoverToggle: "Tampilkan cover album di menu bar",
         .lyricsNotSynced: "Lirik tersedia tetapi tidak tersinkron",
+        .vocabMenu: "Kosakata…",
+        .vocabTitle: "Kosakata",
+        .vocabSearch: "Cari kata, arti, kalimat, atau lagu",
+        .vocabAllSongs: "Semua lagu",
+        .colWord: "Kata",
+        .colMeaning: "Arti",
+        .colSong: "Lagu",
+        .colAdded: "Ditambahkan",
+        .vocabEmpty: "Belum ada kata tersimpan. Klik sebuah kata di Mode belajar lalu tekan Simpan kata.",
+        .vocabNoMatch: "Tidak ada kata yang cocok",
+        .vocabDelete: "Hapus",
+        .vocabDeleteAsk: "Hapus %d kata?",
+        .vocabDeleteOne: "Hapus kata ini?",
+        .vocabExportOne: "Ekspor 1 kata",
+        .vocabDeleteNote: "Tindakan ini tidak bisa dibatalkan.",
+        .vocabPickOne: "Pilih satu kata untuk melihat dan mengubah detailnya",
+        .vocabStats: "%d kata · %d hari ini · %d dalam 7 hari",
+        .vocabReverse: "Sertakan kartu kebalikan (arti ke kata)",
+        .vocabExportN: "Ekspor %d kata",
+        .vocabLineLabel: "Kalimat",
+        .vocabMeaningLabel: "Arti",
         .exportApkgItem: "Paket Anki dengan suara (.apkg)",
         .exportTsvItem: "Teks Anki (.tsv)",
         .exportCsvItem: "CSV (.csv)",
@@ -463,6 +488,27 @@ extension L10n {
         .hkCopy: "Copy current line",
         .menuBarCoverToggle: "Show the album cover in the menu bar",
         .lyricsNotSynced: "Lyrics are available but not synced",
+        .vocabMenu: "Vocabulary…",
+        .vocabTitle: "Vocabulary",
+        .vocabSearch: "Search words, meanings, lines, or songs",
+        .vocabAllSongs: "All songs",
+        .colWord: "Word",
+        .colMeaning: "Meaning",
+        .colSong: "Song",
+        .colAdded: "Added",
+        .vocabEmpty: "No saved words yet. Click a word in Study mode and press Save word.",
+        .vocabNoMatch: "No matching words",
+        .vocabDelete: "Delete",
+        .vocabDeleteAsk: "Delete %d words?",
+        .vocabDeleteOne: "Delete this word?",
+        .vocabExportOne: "Export 1 word",
+        .vocabDeleteNote: "This can't be undone.",
+        .vocabPickOne: "Select a word to see and edit its details",
+        .vocabStats: "%d words · %d today · %d in 7 days",
+        .vocabReverse: "Include reverse cards (meaning to word)",
+        .vocabExportN: "Export %d words",
+        .vocabLineLabel: "Example line",
+        .vocabMeaningLabel: "Meaning",
         .exportApkgItem: "Anki package with audio (.apkg)",
         .exportTsvItem: "Anki text (.tsv)",
         .exportCsvItem: "CSV (.csv)",
