@@ -60,6 +60,14 @@ enum Prefs {
         get { UserDefaults.standard.string(forKey: "appLanguage") ?? "system" }
         set { UserDefaults.standard.set(newValue, forKey: "appLanguage"); L10n.refresh() }
     }
+    static func isRomanizedDismissed(_ key: String) -> Bool {
+        (UserDefaults.standard.stringArray(forKey: "romDismissed") ?? []).contains(key)
+    }
+    static func dismissRomanized(_ key: String) {
+        var a = UserDefaults.standard.stringArray(forKey: "romDismissed") ?? []
+        if !a.contains(key) { a.append(key) }
+        UserDefaults.standard.set(Array(a.suffix(500)), forKey: "romDismissed")
+    }
     static var coverAccent: Bool {
         get { UserDefaults.standard.object(forKey: "coverAccent") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "coverAccent") }

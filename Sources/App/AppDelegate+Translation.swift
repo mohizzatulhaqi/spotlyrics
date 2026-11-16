@@ -14,6 +14,7 @@ extension AppDelegate {
     // Drop translations from memory. The disk cache stays and is reused.
     func resetTranslation() {
         transGen += 1
+        romSuggestion = nil
         trans = []
         lineLangs = []
         romaji = []
@@ -49,6 +50,8 @@ extension AppDelegate {
                 sm.onLogin = { [weak self] on in self?.setLogin(on) }
                 sm.onHotKeys = { [weak self] on in self?.setHotKeys(on) }
                 sm.onTab = { [weak self] t in self?.resizeSettings(t) }
+                sm.onCopyDiagnostics = { [weak self] in self?.copyDiagnostics() }
+                sm.onRevealData = { [weak self] in self?.revealDataFolder() }
                 sm.onLanguage = { [weak self] in self?.languageChanged() }
                 settingsModel = sm
                 let hc = NSHostingController(rootView: SettingsView(s: sm, lang: lm))
@@ -109,6 +112,7 @@ extension AppDelegate {
             mm.romajiOn = Prefs.showRomaji
             mm.romajiRelevant = romaji.contains { !$0.isEmpty }
             mm.lyricsHidden = hidden
+            mm.suggestion = romSuggestion.map { $0 == "ja-rom" ? L(.suggestJa) : L(.suggestKo) }
         }
         if settingsWindow?.isVisible == true { refreshSettings() }
     }
@@ -192,6 +196,19 @@ extension AppDelegate {
         UserDefaults.standard.set(m, forKey: "displayMode")
     }
 
+    func applyRomanizedSuggestion() {
+        guard let tag = romSuggestion, !trackKey.isEmpty else { return }
+        Prefs.setSongOverride(trackKey, tag)
+        langChanged()
+        syncMenuFlags()
+    }
+
+    func dismissRomanizedSuggestion() {
+        Prefs.dismissRomanized(trackKey)
+        romSuggestion = nil
+        syncMenuFlags()
+    }
+
     func casualChanged() {
         resetTranslation()
         floatSig = ""
@@ -218,6 +235,12 @@ extension AppDelegate {
         let texts = lines.map { $0.text }
         let target = Prefs.target
         let ov = Prefs.songOverride(key)
+        if ov == nil, Prefs.sourceMode != "fixed", !Prefs.isRomanizedDismissed(key), let g = Romanized.guess(texts) {
+            romSuggestion = g
+            if suggestedKeys.insert(key).inserted { flash(L(.suggestFlash)) }
+        } else {
+            romSuggestion = nil
+        }
         let cacheKey = "\(ov.map { "o-" + $0 } ?? Prefs.signature)|\(target)|\(key)"
         let gen = transGen
         transKey = key
@@ -249,6 +272,7 @@ extension AppDelegate {
                 } else {
                     let msg = r.errors.map { "\(Lang.name($0.key)): \($0.value)" }.sorted().joined(separator: "; ")
                     self.transError = msg
+                    Diagnostics.log("translation failed: \(msg)")
                     if self.learn.window.isVisible {
                         self.learn.show(L(.transFailedLearn, msg))
                     }

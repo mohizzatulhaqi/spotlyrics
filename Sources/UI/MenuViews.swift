@@ -14,6 +14,7 @@ final class MenuModel: ObservableObject {
     @Published var accent: Color?
     @Published var scrub: Double?
     @Published var langTick = 0
+    @Published var suggestion: String?
     @Published var floatOn = false
     @Published var romajiOn = false
     @Published var romajiRelevant = false
@@ -43,6 +44,8 @@ final class MenuModel: ObservableObject {
     var onRomaji: () -> Void = {}
     var onHide: () -> Void = {}
     var onSettings: () -> Void = {}
+    var onSuggestApply: () -> Void = {}
+    var onSuggestDismiss: () -> Void = {}
 }
 
 struct HeightKey: PreferenceKey {
@@ -202,6 +205,20 @@ struct HeaderCard: View {
                 Circle().fill(color).frame(width: 7, height: 7).padding(.top, 4)
                 Text(m.status).font(.system(size: 11)).foregroundStyle(.white.opacity(0.75))
                     .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+            }
+            if let sug = m.suggestion, !m.isAd {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(sug).font(.system(size: 11)).foregroundStyle(.white.opacity(0.9))
+                        .fixedSize(horizontal: false, vertical: true)
+                    HStack(spacing: 8) {
+                        Button(L(.suggestApply)) { m.onSuggestApply() }
+                        Button(L(.suggestDismiss)) { m.onSuggestDismiss() }
+                    }
+                    .controlSize(.small)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.white.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
             }
             if m.failing {
                 HStack(spacing: 8) {
