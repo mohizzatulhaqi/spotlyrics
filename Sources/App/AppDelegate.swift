@@ -77,6 +77,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     lazy var tracker = PlaybackTracker(source: router)
     var tickTimer: Timer?
     var tickRunning = false
+    var exitSignals: [DispatchSourceSignal] = []
     var lyricsSynced = true
     var setupWindow: NSWindow?
     var setupModel: SetupModel?
@@ -88,6 +89,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var quizWindow: NSWindow?
     var quizModel: QuizModel?
     var versionWindow: NSWindow?
+    var vocabWindow: NSWindow?
+    var vocabModel: VocabModel?
+    let vocabItem = NSMenuItem(title: L(.vocabMenu), action: #selector(openVocabAction), keyEquivalent: "")
     var versionModel: VersionModel?
     var menuOpen = false
     var lastPosMs = 0, lastDurMs = 0
@@ -97,7 +101,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var lastIsEpisode = false
 
 
+    func applicationWillTerminate(_ n: Notification) {
+        Diagnostics.end()
+    }
+
+    func installExitSignals() {
+        for sig in [SIGTERM, SIGINT, SIGHUP] {
+            signal(sig, SIG_IGN)
+            let src = DispatchSource.makeSignalSource(signal: sig, queue: .main)
+            src.setEventHandler {
+                Diagnostics.end()
+                exit(0)
+            }
+            src.resume()
+            exitSignals.append(src)
+        }
+    }
+
     func applicationDidFinishLaunching(_ n: Notification) {
+        Diagnostics.begin(in: Store.dir)
+        let v = (Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String) ?? "dev"
+        Diagnostics.log("app started (version \(v), macOS \(ProcessInfo.processInfo.operatingSystemVersionString))")
+        installExitSignals()
         let menu = NSMenu()
         menu.delegate = self
         MainActor.assumeIsolated {
@@ -131,6 +156,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
             offsetItem.view = ov
         }
         learnItem.image = NSImage(systemSymbolName: "book", accessibilityDescription: nil)
+        vocabItem.image = NSImage(systemSymbolName: "text.book.closed", accessibilityDescription: nil)
         songItem.image = NSImage(systemSymbolName: "music.note.list", accessibilityDescription: nil)
         songItem.submenu = songMenu
         reloadItem.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
@@ -139,7 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         if hotKeysOn { registerHotKeys() }
         infoItem.isHidden = true
         let all: [NSMenuItem] = [infoItem, headerItem, .separator(), offsetItem, .separator(),
-                                 learnItem, songItem, .separator(), settingsItem]
+                                 learnItem, vocabItem, songItem, .separator(), settingsItem]
         for m in all {
             if m.action != nil { m.target = self }
             menu.addItem(m)
@@ -162,6 +188,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
             guard let s = self else { return }
             s.seek(Playback.rawPosition(forLineTime: t, offset: s.offset))
         }
+        learn.onOpenVocab = { [weak self] in self?.openVocab() }
+        learn.onVocabChanged = { [weak self] in self?.vocabChanged() }
+        learn.entryInfo = { [weak self] word, line in self?.vocabInfo(word: word, line: line) ?? ("", "", "") }
         learn.onLoop = { [weak self] a, b in
             guard let s = self else { return }
             if let a = a, let b = b, s.lyricsSynced,
@@ -204,6 +233,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     func menuNeedsUpdate(_ menu: NSMenu) {
         refreshDevice()
         learnItem.title = L(.learnMode)
+        vocabItem.title = L(.vocabMenu)
         songItem.title = L(.thisSong)
         settingsItem.title = L(.settingsMenu)
         reloadItem.title = L(.reloadLyrics)

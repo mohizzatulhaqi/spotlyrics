@@ -67,7 +67,7 @@ extension AppDelegate {
                 ("Not installed", missing.isEmpty ? "none" : missing.joined(separator: ", "))
             ])
         ]
-        return Diagnostics.report(sections: sections, recent: Diagnostics.recent)
+        return Diagnostics.report(sections: sections, recent: Diagnostics.recent, previous: Diagnostics.previous)
     }
 
     func copyDiagnostics() {

@@ -184,6 +184,7 @@ extension AppDelegate {
         if tickCount % 10 == 0 { refreshDevice() }
 
         if router.reevaluate(now: Date(), activePlaying: lastPlaying) {
+            Diagnostics.log("player switched to \(router.activeID.displayName)")
             tracker.reset()
             lastPlaying = false
         }
