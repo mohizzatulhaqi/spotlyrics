@@ -48,7 +48,7 @@ final class LearnPanel: NSObject, @unchecked Sendable {
     var countLabel: NSTextField!
     var translateBtn: NSButton!
     var saveBtn: NSButton!
-    var exportBtn: NSButton!
+    var exportPopup: NSPopUpButton!
     var speakBtn: NSButton!
     let speaker = Speaker()
     var lastMeaningFound = false
@@ -145,9 +145,14 @@ final class LearnPanel: NSObject, @unchecked Sendable {
 
         translateBtn = button(L(.btnTranslate), NSRect(x: 10, y: 12, width: 94, height: 30), #selector(translateLineAction))
         saveBtn = button(L(.btnSaveWord), NSRect(x: 108, y: 12, width: 86, height: 30), #selector(saveWord))
-        exportBtn = button(L(.btnExportAnki), NSRect(x: 198, y: 12, width: 92, height: 30), #selector(exportAnki))
+        exportPopup = NSPopUpButton(frame: NSRect(x: 198, y: 12, width: 92, height: 30), pullsDown: true)
+        exportPopup.autoresizingMask = [.maxYMargin]
+        exportPopup.controlSize = .small
+        exportPopup.font = .systemFont(ofSize: 11)
+        fillExportMenu()
         speakBtn = button(L(.btnSpeak), NSRect(x: 294, y: 12, width: 72, height: 30), #selector(speakAction))
-        for b in [translateBtn!, saveBtn!, exportBtn!, speakBtn!] {
+        cv.addSubview(exportPopup)
+        for b in [translateBtn!, saveBtn!, speakBtn!] {
             b.controlSize = .small
             b.font = .systemFont(ofSize: 11)
             cv.addSubview(b)
@@ -179,7 +184,7 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         speakBtn.title = L(.btnSpeak)
         translateBtn.title = L(.btnTranslate)
         saveBtn.title = L(.btnSaveWord)
-        exportBtn.title = L(.btnExportAnki)
+        fillExportMenu()
         updateCount()
     }
 
@@ -394,8 +399,47 @@ final class LearnPanel: NSObject, @unchecked Sendable {
             NSSound.beep()
             return
         }
-        Vocab.add(VocabEntry(word: w, meaning: m, line: lastLine ?? "", song: song(), date: Date()))
+        Vocab.add(VocabEntry(word: w, meaning: m, line: lastLine ?? "", song: song(), date: Date(), lang: langFor(lastLine ?? "")))
         updateCount()
+    }
+
+    func fillExportMenu() {
+        exportPopup.removeAllItems()
+        exportPopup.addItem(withTitle: L(.btnExport))
+        for (title, sel) in [(L(.exportApkgItem), #selector(exportApkgAction)), (L(.exportTsvItem), #selector(exportAnki)),
+                             (L(.exportCsvItem), #selector(exportCSVAction))] {
+            let item = NSMenuItem(title: title, action: sel, keyEquivalent: "")
+            item.target = self
+            exportPopup.menu?.addItem(item)
+        }
+    }
+
+    @objc func exportApkgAction() {
+        let entries = Vocab.load()
+        guard !entries.isEmpty else { show(L(.exportNone)); return }
+        show(L(.apkgWorking))
+        Task {
+            do {
+                let r = try await VocabExporter.exportApkg(entries: entries) { done, total in
+                    DispatchQueue.main.async { self.show(L(.apkgProgress, done, total)) }
+                }
+                DispatchQueue.main.async {
+                    var msg = L(.apkgDone, r.url.lastPathComponent, r.cards, r.audio)
+                    if r.missingVoice > 0 { msg += "\n\n" + L(.apkgNoVoice, r.missingVoice) }
+                    self.show(msg)
+                    NSWorkspace.shared.activateFileViewerSelecting([r.url])
+                }
+            } catch {
+                DispatchQueue.main.async { self.show(L(.exportFailed)) }
+                Diagnostics.log("apkg export failed: \(error)")
+            }
+        }
+    }
+
+    @objc func exportCSVAction() {
+        guard let url = Vocab.exportCSV() else { show(L(.exportNone)); return }
+        show(L(.exportFileDone, url.lastPathComponent))
+        NSWorkspace.shared.activateFileViewerSelecting([url])
     }
 
     @objc func exportAnki() {
