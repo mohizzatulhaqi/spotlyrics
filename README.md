@@ -1,5 +1,7 @@
 # SpotLyrics
 
+[![CI](https://github.com/mohizzatulhaqi/spotlyrics/actions/workflows/ci.yml/badge.svg)](https://github.com/mohizzatulhaqi/spotlyrics/actions/workflows/ci.yml)
+
 Synced lyrics for Spotify and Apple Music in the macOS menu bar, with on-device translation, pronunciation readings (romaji), and a language study mode.
 
 SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, fetches time-stamped lyrics from [LRCLIB](https://lrclib.net), and shows them in the menu bar, in a karaoke-style floating window, and on a player card inside the menu. Translation runs entirely on your device using Apple's Translation framework, so no lyrics are sent to a translation service.
@@ -27,6 +29,7 @@ SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, 
 - [Adding a display language](#adding-a-display-language)
 - [Troubleshooting](#troubleshooting)
 - [Limitations](#limitations)
+- [Continuous integration and releases](#continuous-integration-and-releases)
 - [Contributing](#contributing)
 - [Acknowledgements](#acknowledgements)
 - [License](#license)
@@ -53,7 +56,8 @@ SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, 
 - Translations are cached per song and target language.
 
 **Readings and study**
-- **Readings** under the original lyrics: romaji for Japanese (kanji are read with proper Japanese readings) and Revised Romanization for Korean.
+- **Readings** under the original lyrics: romaji for Japanese (kanji are read with proper Japanese readings), Revised Romanization for Korean, **pinyin** with tone marks for Chinese, and transliteration for Russian, Ukrainian, Greek, and Hindi.
+- **Furigana** for Japanese: hiragana drawn above the kanji in the floating window (and as a hiragana line elsewhere), with the okurigana trimmed so that `賢い` shows `かしこ` over `賢` only. Choose between romaji and furigana in Settings > Appearance.
 - **Study mode**: click a word to see its meaning, **hear it spoken** with the built-in macOS voices, click a line to translate it, **double-click a line to jump to that moment in the song**, **loop a section** between two lines, take a **fill-in-the-blank quiz** built from the lyrics, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
 - **Romanization detection**: when the lyrics of a song look like Japanese romaji or romanized Korean, the app notices and offers to translate them as the right language.
 
@@ -132,7 +136,10 @@ A window that shows the whole lyrics with the current line highlighted.
 - **Quiz.** The **Quiz** button opens a fill-in-the-blank quiz: a random line from the song with one word hidden, its translation as a hint, and a score. Answers ignore case, accents, and punctuation. **Play line** replays the line from the song. It works for languages without spaces too, such as Japanese.
 - **Speak** reads the selected word (or the selected line) aloud in the language of the lyrics, using the voices built into macOS. Press it again to stop. In the quiz, **Speak line** reads the whole line. If a language has no voice installed, the app tells you where to add one (System Settings > Accessibility > Spoken Content).
 - **Save word** adds the word, its meaning, the source line, and the song title to your vocabulary list.
-- **Export to Anki** writes `SpotLyrics-vocab.tsv` to your Downloads folder. In Anki, choose File > Import and pick that file. The first column becomes the front of the card and the second column the back.
+- **Export** is a menu with three formats, all written to your Downloads folder:
+  - **Anki package with audio (`.apkg`)**: one card per saved word, with the word, its meaning, the example line, and the song. The word and the line are spoken with the macOS voices and stored as audio files (`.m4a`) inside the package, so the cards play them in Anki. In Anki, choose File > Import and pick the file. Words whose language has no installed voice are exported without audio, and the app tells you how many.
+  - **Anki text (`.tsv`)**: the plain tab-separated file, without audio.
+  - **CSV (`.csv`)**: word, meaning, line, song, and date, for any other tool.
 
 ### Floating lyrics
 
@@ -156,7 +163,7 @@ Open with **⌘,** or the **Settings…** menu item.
 |---|---|
 | **General** | App language (Follow system, Indonesia, English), launch at login, floating lyrics |
 | **Translation** | Casual style, target language, lyrics-language mode, and a list of languages to download with their status |
-| **Appearance** | Show readings (romaji), accent color from the cover, album cover in the menu bar |
+| **Appearance** | Show readings, Japanese readings style (romaji or furigana), accent color from the cover, album cover in the menu bar |
 | **Shortcuts** | A switch for global shortcuts, and a list where you can rebind each shortcut |
 | **About** | App version, **Copy diagnostics**, a shortcut to the data folder, **Open the setup guide**, and a link to report an issue |
 
@@ -209,7 +216,7 @@ LRCLIB ◀── get / search ── Lyrics.load ──▶ disk cache ───�
 
 **Translating.** Lines are grouped by language, and each group is sent to a `TranslationSession` for its pair. A failure in one language (for example one that is not downloaded yet) does not fail the others. The raw Apple output is cached, while the casual-style rules are applied at display time, so switching casual style on or off takes effect without translating again.
 
-**Readings.** For Japanese the app uses `CFStringTokenizer` with the Japanese locale, because the system's plain transliteration reads kanji as Mandarin pinyin. The particles は, へ, を are written `wa`, `e`, `o`, and a small っ doubles the following consonant. For Korean, a Revised Romanization converter is written in-house and handles sound changes between syllables, ㅎ dropping out, nasalization, and palatalization.
+**Readings.** For Chinese, the system transliteration gives pinyin with tone marks. Russian and Ukrainian use a small table of my own (the built-in transliteration produced `â tebâ lûblû` for `Я тебя люблю`, the table gives `Ya tebya lyublyu`), and Greek and Hindi use the system transliteration with the accents removed. Arabic and Thai are deliberately not supported, because the system output has no vowels or is not a standard romanization, and a misleading reading is worse than none. For Japanese the app uses `CFStringTokenizer` with the Japanese locale, because the system's plain transliteration reads kanji as Mandarin pinyin. The particles は, へ, を are written `wa`, `e`, `o`, and a small っ doubles the following consonant. For Korean, a Revised Romanization converter is written in-house and handles sound changes between syllables, ㅎ dropping out, nasalization, and palatalization.
 
 **Detecting romanized lyrics.** For lyrics written in Latin letters, the app counts how many words belong to a list of distinctly Japanese or Korean words (particles such as `wa` and `wo`, common words, and typical verb endings). If enough of the text matches and the lyrics have no native script, it suggests the language. Words that also exist in English, Spanish, or Indonesian are left out of the lists on purpose. On a check against several hundred real lyric versions from LRCLIB, it flagged only genuinely romanized lyrics and none of the English, Spanish, Indonesian, or native-script ones.
 
@@ -228,6 +235,9 @@ Sources/
     Lyrics.swift                LRCLIB client, LRC parser, version selection
     Detect.swift                per-line language detection
     Readings.swift              romaji, Korean romanization, romaji-to-script conversion
+    Ruby.swift                  furigana, hiragana readings, pinyin, Cyrillic and Greek transliteration
+    Anki.swift                  Anki package (.apkg) writer: SQLite collection, media, zip
+    Vocab.swift                 saved vocabulary, CSV and TSV export
     Casual.swift                casual-style rules (id and en)
     TrackName.swift             title and artist cleanup for lyrics lookups
     LyricsOption.swift          lyrics versions for the picker, ranking
@@ -242,7 +252,7 @@ Sources/
     Palette.swift               accent color selection from pixels
   Audio/AudioOut.swift          active audio output and per-device offset
   Translation/Translator.swift  wrapper around Apple Translation sessions
-  Learn/                        dictionary, vocabulary, Study mode window
+  Learn/                        dictionary, vocabulary export, Study mode window
   UI/                           SwiftUI views: menu card, floating lyrics, Settings
   App/                          AppDelegate and its extensions (playback, translation,
                                 floating lyrics, shortcuts, study, export, setup,
@@ -255,6 +265,7 @@ build.sh                        builds SpotLyrics.app
 Info.plist                      bundle metadata and the Automation permission text
 make_icon.swift                 app icon generator
 docs/screenshots/               images for this README
+.github/workflows/              CI (tests and build) and release workflows
 ```
 
 The `Core` folder deliberately imports neither Cocoa nor SwiftUI, so its logic can be tested apart from the interface.
@@ -285,7 +296,7 @@ What leaves your device:
 
 The script compiles `Sources/Core/*.swift` together with `Tests/main.swift` and runs the result. The tests need no network, no Spotify, and no full Xcode. Exit code 0 means everything passed.
 
-Covered: title cleanup and match variants, the lyrics version list and its ranking, how LRCLIB replies are classified, podcast detection, the playback tracker (driven by a fake player, including a simulated 25 seconds of ticks), the adaptive loop pace, the loop range, quiz generation and answer matching, SRT and text export, shortcut key combinations and conflict detection, the lyrics parser, lyrics version selection, per-line language detection, detection of romanized lyrics (including samples that must not be flagged), romaji and Korean romanization, romaji-to-script conversion, the diagnostics log and report (including redaction of your home folder path), the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
+Covered: furigana, hiragana readings, okurigana trimming, pinyin, and transliteration, the Anki package (opened and inspected after being built: schema, model, notes, cards, media, checksums), CSV export, title cleanup and match variants, the lyrics version list and its ranking, how LRCLIB replies are classified, podcast detection, the playback tracker (driven by a fake player, including a simulated 25 seconds of ticks), the adaptive loop pace, the loop range, quiz generation and answer matching, SRT and text export, shortcut key combinations and conflict detection, the lyrics parser, lyrics version selection, per-line language detection, detection of romanized lyrics (including samples that must not be flagged), romaji and Korean romanization, romaji-to-script conversion, the diagnostics log and report (including redaction of your home folder path), the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
 
 Not covered: the interface (menu card, floating window, Settings) and the integration with Spotify and Apple Music (the AppleScript calls themselves).
 
@@ -326,12 +337,30 @@ The casual-style rules (`Sources/Core/Casual.swift`) are decided by the **transl
 
 - **Translation style.** Apple Translation has no style setting. Casual style only smooths formal wording through simple rules for Indonesian and English targets, so stiffness that comes from sentence structure cannot be changed. Apple's on-device language model (Apple Intelligence) is not used because it does not support Indonesian and often refuses lyric text.
 - **Korean romanization** converted back to Hangul can be misspelled. That is inherent to how ambiguous Korean romanization is.
+- **Anki export** was checked against the rules of the Anki 2.1 collection format (schema, model, checksums, media), but not imported into Anki itself. Spoken audio for a word saved from romanized lyrics reads the romanized text, not the converted script.
+- **No readings for Arabic and Thai** (see above).
 - **Romanization detection is a heuristic.** It needs enough lines of text (at least about 30 words) and can miss unusual or very short lyrics. You can always pick the language yourself under **This song > Song language**.
 - **A download percentage** for language packs is not available from Apple's API. You only get a spinner and a timer.
 - **Spotify desktop and Apple Music only.** Other players are not supported yet, and web players cannot be read at all.
 - **Not notarized.** The binary cannot be shared directly with another Mac without rebuilding it there.
 - **Lyrics coverage** depends on the LRCLIB database.
 - **Podcasts** have no lyrics. Local files in Spotify are looked up by their tags like any other song.
+
+## Continuous integration and releases
+
+Two GitHub Actions workflows live in `.github/workflows/`:
+
+- **`ci.yml`** runs on every push to `main` and on every pull request: it prints the toolchain, runs `./Tests/run.sh`, builds the app with `./build.sh`, and checks the signature and `Info.plist` of the result.
+- **`release.yml`** runs when you push a tag that starts with `v`. It sets the app version from the tag, runs the tests, builds the app, zips `SpotLyrics.app` with a SHA-256 checksum, and publishes a GitHub release with install notes.
+
+To cut a release:
+
+```bash
+git tag v0.4.0
+git push origin v0.4.0
+```
+
+Both workflows use the `macos-26` runner, because the app needs macOS 26. If GitHub does not offer that runner for your account yet, the jobs cannot start; wait for it or run the same two commands (`./Tests/run.sh` and `./build.sh`) locally. The release is signed ad hoc and not notarized, so people who download it must right-click the app and choose Open, or run `xattr -dr com.apple.quarantine /Applications/SpotLyrics.app`. Notarization needs a paid Apple Developer account and would be a separate step.
 
 ## Contributing
 
