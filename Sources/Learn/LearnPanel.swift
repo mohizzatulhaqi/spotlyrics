@@ -5,6 +5,7 @@ import Cocoa
 final class LyricsTextView: NSTextView {
     var onClick: ((String?, String) -> Void)?
     var onDoubleClick: ((Int) -> Void)?
+    var onParagraph: ((Int) -> Void)?
 
     override func mouseDown(with event: NSEvent) {
         let ns = string as NSString
@@ -19,6 +20,7 @@ final class LyricsTextView: NSTextView {
         let inTrans = sep.location != NSNotFound && i >= paraR.location + sep.location
         let origR = NSRange(location: paraR.location, length: (origText as NSString).length)
         let line = origText.trimmingCharacters(in: .whitespacesAndNewlines)
+        onParagraph?(paraR.location)
         if event.clickCount == 2 {
             setSelectedRange(origR)
             onDoubleClick?(paraR.location)
@@ -49,6 +51,16 @@ final class LearnPanel: NSObject, @unchecked Sendable {
     var lastMeaningFound = false
     var times: [Double] = []
     var onSeek: (Double) -> Void = { _ in }
+    var onLoop: (Int?, Int?) -> Void = { _, _ in }
+    var onQuiz: () -> Void = {}
+    var loopA: Int?
+    var loopB: Int?
+    var selectedIdx: Int?
+    var loopLabel: NSTextField!
+    var loopABtn: NSButton!
+    var loopBBtn: NSButton!
+    var loopClearBtn: NSButton!
+    var quizBtn: NSButton!
 
     var ranges: [NSRange] = []
     var curIdx = -1
@@ -97,13 +109,36 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         tv.textContainerInset = NSSize(width: 12, height: 10)
         tv.onClick = { [weak self] word, line in self?.clicked(word: word, line: line) }
         tv.onDoubleClick = { [weak self] loc in self?.jump(toParagraphAt: loc) }
-        cv.addSubview(scroll(tv, NSRect(x: 0, y: 190, width: 520, height: 410), [.width, .height]))
+        tv.onParagraph = { [weak self] loc in
+            guard let s = self else { return }
+            s.selectedIdx = s.ranges.firstIndex(where: { $0.location == loc })
+        }
+        cv.addSubview(scroll(tv, NSRect(x: 0, y: 216, width: 520, height: 384), [.width, .height]))
 
         result.isSelectable = true
         result.font = .systemFont(ofSize: 13)
         result.textContainerInset = NSSize(width: 10, height: 8)
         result.string = L(.learnHint)
-        cv.addSubview(scroll(result, NSRect(x: 0, y: 52, width: 520, height: 130), [.width, .maxYMargin]))
+        cv.addSubview(scroll(result, NSRect(x: 0, y: 52, width: 520, height: 124), [.width, .maxYMargin]))
+
+        loopABtn = button(L(.loopSetA), NSRect(x: 10, y: 184, width: 78, height: 26), #selector(setLoopA))
+        loopBBtn = button(L(.loopSetB), NSRect(x: 92, y: 184, width: 78, height: 26), #selector(setLoopB))
+        loopClearBtn = button(L(.loopClear), NSRect(x: 174, y: 184, width: 64, height: 26), #selector(clearLoopAction))
+        quizBtn = button(L(.quizButton), NSRect(x: 440, y: 184, width: 70, height: 26), #selector(openQuizAction))
+        quizBtn.autoresizingMask = [.maxYMargin, .minXMargin]
+        for b in [loopABtn!, loopBBtn!, loopClearBtn!, quizBtn!] {
+            b.controlSize = .small
+            b.font = .systemFont(ofSize: 11)
+            cv.addSubview(b)
+        }
+        loopLabel = NSTextField(labelWithString: "")
+        loopLabel.frame = NSRect(x: 246, y: 189, width: 188, height: 16)
+        loopLabel.font = .systemFont(ofSize: 11)
+        loopLabel.textColor = .secondaryLabelColor
+        loopLabel.lineBreakMode = .byTruncatingTail
+        loopLabel.autoresizingMask = [.maxYMargin]
+        cv.addSubview(loopLabel)
+        updateLoopUI()
 
         translateBtn = button(L(.btnTranslate), NSRect(x: 10, y: 12, width: 110, height: 30), #selector(translateLineAction))
         saveBtn = button(L(.btnSaveWord), NSRect(x: 128, y: 12, width: 100, height: 30), #selector(saveWord))
@@ -128,6 +163,11 @@ final class LearnPanel: NSObject, @unchecked Sendable {
     func updateCount() { countLabel.stringValue = L(.vocabCount, Vocab.load().count) }
 
     func relocalize() {
+        loopABtn.title = L(.loopSetA)
+        loopBBtn.title = L(.loopSetB)
+        loopClearBtn.title = L(.loopClear)
+        quizBtn.title = L(.quizButton)
+        updateLoopUI()
         translateBtn.title = L(.btnTranslate)
         saveBtn.title = L(.btnSaveWord)
         exportBtn.title = L(.btnExportAnki)
@@ -179,6 +219,71 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         ranges = []
         curIdx = -1
         lastWord = nil; lastMeaning = nil; lastLine = nil
+        updateLoopUI()
+    }
+
+    static func fmt(_ t: Double) -> String { String(format: "%d:%02d", Int(t) / 60, Int(t) % 60) }
+
+    @objc func setLoopA() {
+        guard let i = selectedIdx else { NSSound.beep(); return }
+        loopA = i
+        if let b = loopB, b < i { loopB = nil }
+        loopChanged()
+    }
+
+    @objc func setLoopB() {
+        guard let i = selectedIdx else { NSSound.beep(); return }
+        if let a = loopA {
+            if i < a { loopB = a; loopA = i } else { loopB = i }
+        } else {
+            loopA = i
+            loopB = i
+        }
+        loopChanged()
+    }
+
+    @objc func clearLoopAction() {
+        loopA = nil
+        loopB = nil
+        loopChanged()
+    }
+
+    @objc func openQuizAction() { onQuiz() }
+
+    func clearLoopSilently() {
+        loopA = nil
+        loopB = nil
+        selectedIdx = nil
+        updateLoopUI()
+    }
+
+    func loopChanged() {
+        updateLoopUI()
+        if let a = loopA, let b = loopB { onLoop(a, b) } else { onLoop(nil, nil) }
+    }
+
+    func updateLoopUI() {
+        guard loopLabel != nil else { return }
+        func time(_ i: Int) -> String { i < times.count ? LearnPanel.fmt(times[i]) : "?" }
+        if let a = loopA, let b = loopB {
+            loopLabel.stringValue = L(.loopRange, time(a), time(b))
+        } else if let a = loopA {
+            loopLabel.stringValue = L(.loopPickB, time(a))
+        } else {
+            loopLabel.stringValue = L(.loopHint)
+        }
+        guard let ts = tv.textStorage, ts.length > 0 else { return }
+        ts.beginEditing()
+        ts.removeAttribute(.backgroundColor, range: NSRange(location: 0, length: ts.length))
+        if let a = loopA, let b = loopB, a < ranges.count, b < ranges.count {
+            let start = ranges[a].location
+            let end = ranges[b].location + ranges[b].length
+            ts.addAttribute(.backgroundColor, value: NSColor.controlAccentColor.withAlphaComponent(0.22),
+                            range: NSRange(location: start, length: max(0, end - start)))
+        } else if let a = loopA, a < ranges.count {
+            ts.addAttribute(.backgroundColor, value: NSColor.controlAccentColor.withAlphaComponent(0.22), range: ranges[a])
+        }
+        ts.endEditing()
     }
 
     func setCurrent(_ i: Int) {

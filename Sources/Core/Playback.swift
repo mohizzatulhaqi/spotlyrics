@@ -18,6 +18,25 @@ enum Playback {
     }
 }
 
+struct LoopRange: Equatable {
+    let startTime: Double
+    let endTime: Double
+
+    func shouldWrap(effectivePos: Double) -> Bool { effectivePos >= endTime }
+
+    static func make(lines: [Line], a: Int, b: Int, duration: Double) -> LoopRange? {
+        guard !lines.isEmpty, a >= 0, b >= 0, a < lines.count, b < lines.count else { return nil }
+        let lo = min(a, b), hi = max(a, b)
+        let end: Double
+        if hi + 1 < lines.count {
+            end = lines[hi + 1].time
+        } else {
+            end = duration > lines[hi].time ? duration : lines[hi].time + 5
+        }
+        return LoopRange(startTime: lines[lo].time, endTime: end)
+    }
+}
+
 enum Seek {
     static func position(x: Double, width: Double, duration: Double) -> Double {
         guard width > 0, duration > 0 else { return 0 }
