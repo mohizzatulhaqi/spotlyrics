@@ -112,7 +112,11 @@ final class LangModel: ObservableObject {
         guard t == token, let id = downloading else { return }
         downloading = nil
         config = nil
-        if let e = error { failed[id] = e; queue = [] }
+        if let e = error {
+            failed[id] = e
+            queue = []
+            Diagnostics.log("language download failed: \(id): \(e)")
+        }
         await refresh()
         if status[id] != .installed && error == nil {
             for _ in 0..<5 {

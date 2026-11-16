@@ -28,11 +28,27 @@ final class SettingsModel: ObservableObject {
         didSet { if !syncing { Prefs.appLanguage = appLang; langTick += 1; onLanguage() } }
     }
     @Published var langTick = 0
+    @Published var diagCopied = false
     @Published var loginAvailable = true
     @Published var loginNote = ""
     @Published var hotKeyLines: [String] = []
     private var syncing = false
     var onTab: (String) -> Void = { _ in }
+    var onCopyDiagnostics: () -> Void = {}
+    var onRevealData: () -> Void = {}
+    let versionText: String = {
+        let i = Bundle.main.infoDictionary
+        guard let v = i?["CFBundleShortVersionString"] as? String else { return "dev" }
+        return v + (((i?["CFBundleVersion"] as? String).map { " (\($0))" }) ?? "")
+    }()
+
+    func flashCopied() {
+        diagCopied = true
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            self.diagCopied = false
+        }
+    }
     var onLanguage: () -> Void = {}
     var onCasual: () -> Void = {}
     var onRomaji: () -> Void = {}
@@ -45,6 +61,7 @@ final class SettingsModel: ObservableObject {
         switch tab {
         case "terjemahan": return 720
         case "pintasan": return 370
+        case "tentang": return 340
         case "tampilan": return 300
         default: return 300
         }
@@ -76,6 +93,7 @@ struct SettingsView: View {
             translation.tabItem { Label(L(.tabTranslation), systemImage: "globe") }.tag("terjemahan")
             appearance.tabItem { Label(L(.tabAppearance), systemImage: "paintpalette") }.tag("tampilan")
             shortcuts.tabItem { Label(L(.tabShortcuts), systemImage: "keyboard") }.tag("pintasan")
+            about.tabItem { Label(L(.tabAbout), systemImage: "info.circle") }.tag("tentang")
         }
         .id(s.langTick)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -125,6 +143,36 @@ struct SettingsView: View {
                 Text(L(.romajiNote))
                     .font(.caption).foregroundStyle(.secondary)
                 Toggle(L(.accentToggle), isOn: $s.accent)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    var about: some View {
+        Form {
+            Section {
+                HStack(spacing: 14) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 52, height: 52)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("SpotLyrics").font(.headline)
+                        Text(L(.aboutVersion, s.versionText)).foregroundStyle(.secondary)
+                    }
+                }
+            }
+            Section {
+                HStack {
+                    Button(L(.copyDiagnostics)) { s.onCopyDiagnostics() }
+                    if s.diagCopied {
+                        Label(L(.diagCopied), systemImage: "checkmark.circle.fill").foregroundStyle(.green)
+                    }
+                }
+                Text(L(.diagHint)).font(.caption).foregroundStyle(.secondary)
+                Button(L(.revealData)) { s.onRevealData() }
+                if let url = URL(string: "https://github.com/mohizzatulhaqi/spotlyrics/issues") {
+                    Link(L(.reportIssue), destination: url)
+                }
             }
         }
         .formStyle(.grouped)

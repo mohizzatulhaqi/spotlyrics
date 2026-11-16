@@ -32,6 +32,21 @@ enum Store {
             try? d.write(to: lyricsFile(key), options: .atomic)
         }
     }
+    static func cacheStats() -> (lyricsCount: Int, lyricsBytes: Int, transCount: Int, transBytes: Int) {
+        func scan(_ dir: URL, suffix: String) -> (Int, Int) {
+            let urls = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: [.fileSizeKey])) ?? []
+            var n = 0, bytes = 0
+            for u in urls where u.lastPathComponent.hasSuffix(suffix) {
+                n += 1
+                bytes += (try? u.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+            }
+            return (n, bytes)
+        }
+        let l = scan(lyricsDir, suffix: ".json")
+        let t = scan(dir, suffix: ".tr.json")
+        return (l.0, l.1, t.0, t.1)
+    }
+
     static func readTrans(_ key: String) -> [String]? {
         guard let d = try? Data(contentsOf: transFile(key)) else { return nil }
         return try? JSONDecoder().decode([String].self, from: d)

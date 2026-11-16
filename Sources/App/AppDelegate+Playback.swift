@@ -27,6 +27,7 @@ extension AppDelegate {
     }
 
     @objc func spotifyChanged(_ n: Notification) {
+        notificationCount += 1
         needFetch = true
         retryAt = .distantPast
         tick()
@@ -183,6 +184,7 @@ extension AppDelegate {
                 snap = nil
                 retryAt = Date().addingTimeInterval(3)
             } else {
+                loggedAutomationFailure = false
                 snap = Snap(title: d.atIndex(1)?.stringValue ?? "", artist: d.atIndex(2)?.stringValue ?? "",
                             album: d.atIndex(3)?.stringValue ?? "",
                             durMs: Int(d.atIndex(4)?.int32Value ?? 0), posMs: Int(d.atIndex(5)?.int32Value ?? 0),
@@ -192,6 +194,10 @@ extension AppDelegate {
             }
         }
         guard let sp = snap else {
+            if !loggedAutomationFailure {
+                loggedAutomationFailure = true
+                Diagnostics.log("spotify: could not read player state (Automation denied or Spotify busy)")
+            }
             infoItem.title = L(.automationInfo)
             setTitle("♪")
             warnAutomation()
@@ -254,7 +260,7 @@ extension AppDelegate {
             loadLyrics(title: title, artist: artist, album: album, duration: durMs / 1000, key: key, refresh: false)
         }
 
-        let pos = Double(posMs) / 1000 + 0.25 + offset
+        let pos = Playback.effective(posMs: posMs, offset: offset)
         var idx: Int?
         for (n, l) in lines.enumerated() { if l.time <= pos { idx = n } else { break } }
 
@@ -276,7 +282,7 @@ extension AppDelegate {
             let lk = trackKey + "#\(lines.count)#\(trans.count)#\(romaji.count)#\(showRm)#\(transKey == trackKey)"
             if lk != learnKey {
                 learnKey = lk
-                learn.setLyrics(lines.map { $0.text }, title: "\(artist) - \(title)", translations: tr)
+                learn.setLyrics(lines.map { $0.text }, title: "\(artist) - \(title)", translations: tr, times: lines.map { $0.time })
             }
             learn.setCurrent(idx ?? -1)
         }

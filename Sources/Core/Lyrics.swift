@@ -38,7 +38,12 @@ enum Lyrics {
             return found
         }
         if let c = cached, !c.lines.isEmpty { return c.lines }
-        if reached { Store.writeLyrics(cacheKey, []) }
+        if reached {
+            Store.writeLyrics(cacheKey, [])
+            Diagnostics.log("lyrics: not found on LRCLIB")
+        } else {
+            Diagnostics.log("lyrics: LRCLIB unreachable")
+        }
         return []
     }
 
