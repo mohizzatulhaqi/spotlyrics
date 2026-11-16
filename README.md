@@ -58,6 +58,7 @@ SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, 
 **Readings and study**
 - **Readings** under the original lyrics: romaji for Japanese (kanji are read with proper Japanese readings), Revised Romanization for Korean, **pinyin** with tone marks for Chinese, and transliteration for Russian, Ukrainian, Greek, and Hindi.
 - **Furigana** for Japanese: hiragana drawn above the kanji in the floating window (and as a hiragana line elsewhere), with the okurigana trimmed so that `賢い` shows `かしこ` over `賢` only. Choose between romaji and furigana in Settings > Appearance.
+- **Vocabulary manager**: a window (menu **Vocabulary…**) that lists your saved words with search, a per-song filter, statistics, editing of meanings, deletion with confirmation, and export of whatever is currently shown.
 - **Study mode**: click a word to see its meaning, **hear it spoken** with the built-in macOS voices, click a line to translate it, **double-click a line to jump to that moment in the song**, **loop a section** between two lines, take a **fill-in-the-blank quiz** built from the lyrics, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
 - **Romanization detection**: when the lyrics of a song look like Japanese romaji or romanized Korean, the app notices and offers to translate them as the right language.
 
@@ -137,7 +138,7 @@ A window that shows the whole lyrics with the current line highlighted.
 - **Speak** reads the selected word (or the selected line) aloud in the language of the lyrics, using the voices built into macOS. Press it again to stop. In the quiz, **Speak line** reads the whole line. If a language has no voice installed, the app tells you where to add one (System Settings > Accessibility > Spoken Content).
 - **Save word** adds the word, its meaning, the source line, and the song title to your vocabulary list.
 - **Export** is a menu with three formats, all written to your Downloads folder:
-  - **Anki package with audio (`.apkg`)**: one card per saved word, with the word, its meaning, the example line, and the song. The word and the line are spoken with the macOS voices and stored as audio files (`.m4a`) inside the package, so the cards play them in Anki. In Anki, choose File > Import and pick the file. Words whose language has no installed voice are exported without audio, and the app tells you how many.
+  - **Anki package with audio (`.apkg`)**: one card per saved word, with the word, its reading (romaji, furigana, or pinyin), its meaning, the example line with its reading and translation, and the song. Each note is tagged `SpotLyrics`, `SpotLyrics::Artist::Title`, and `lang_xx`, so you can filter by song in Anki. An optional **reverse card** (meaning to word) can be switched on in the vocabulary manager. The note type and deck ids are fixed, so importing a newer export updates the cards you already have instead of duplicating them. The word and the line are spoken with the macOS voices and stored as audio files (`.m4a`) inside the package, so the cards play them in Anki. In Anki, choose File > Import and pick the file. Words whose language has no installed voice are exported without audio, and the app tells you how many.
   - **Anki text (`.tsv`)**: the plain tab-separated file, without audio.
   - **CSV (`.csv`)**: word, meaning, line, song, and date, for any other tool.
 
@@ -165,7 +166,7 @@ Open with **⌘,** or the **Settings…** menu item.
 | **Translation** | Casual style, target language, lyrics-language mode, and a list of languages to download with their status |
 | **Appearance** | Show readings, Japanese readings style (romaji or furigana), accent color from the cover, album cover in the menu bar |
 | **Shortcuts** | A switch for global shortcuts, and a list where you can rebind each shortcut |
-| **About** | App version, **Copy diagnostics**, a shortcut to the data folder, **Open the setup guide**, and a link to report an issue |
+| **About** | App version, **Copy diagnostics** (including the events of the previous session and whether it ended cleanly), a shortcut to the data folder, **Open the setup guide**, and a link to report an issue |
 
 In the Translation tab, each language row shows **Installed**, **Download**, or **Not supported**. While a download runs you see a spinner and a running timer. macOS does not report a download percentage, so real progress is only visible in the system download dialog.
 
@@ -237,7 +238,7 @@ Sources/
     Readings.swift              romaji, Korean romanization, romaji-to-script conversion
     Ruby.swift                  furigana, hiragana readings, pinyin, Cyrillic and Greek transliteration
     Anki.swift                  Anki package (.apkg) writer: SQLite collection, media, zip
-    Vocab.swift                 saved vocabulary, CSV and TSV export
+    Vocab.swift                 saved vocabulary: storage, search, statistics, CSV and TSV export
     Casual.swift                casual-style rules (id and en)
     TrackName.swift             title and artist cleanup for lyrics lookups
     LyricsOption.swift          lyrics versions for the picker, ranking
@@ -277,6 +278,7 @@ The `Core` folder deliberately imports neither Cocoa nor SwiftUI, so its logic c
 | Lyrics cache | `~/Library/Application Support/SpotLyrics/Lyrics/` |
 | Translation cache | `~/Library/Application Support/SpotLyrics/*.tr.json` |
 | Vocabulary | `~/Library/Application Support/SpotLyrics/vocab.json` |
+| Event log and session marker | `~/Library/Application Support/SpotLyrics/diagnostics.log` and `session.json` |
 | Preferences | the `local.spotlyrics` domain (`defaults read local.spotlyrics`) |
 | Anki export | `~/Downloads/SpotLyrics-vocab.tsv` |
 
@@ -296,7 +298,7 @@ What leaves your device:
 
 The script compiles `Sources/Core/*.swift` together with `Tests/main.swift` and runs the result. The tests need no network, no Spotify, and no full Xcode. Exit code 0 means everything passed.
 
-Covered: furigana, hiragana readings, okurigana trimming, pinyin, and transliteration, the Anki package (opened and inspected after being built: schema, model, notes, cards, media, checksums), CSV export, title cleanup and match variants, the lyrics version list and its ranking, how LRCLIB replies are classified, podcast detection, the playback tracker (driven by a fake player, including a simulated 25 seconds of ticks), the adaptive loop pace, the loop range, quiz generation and answer matching, SRT and text export, shortcut key combinations and conflict detection, the lyrics parser, lyrics version selection, per-line language detection, detection of romanized lyrics (including samples that must not be flagged), romaji and Korean romanization, romaji-to-script conversion, the diagnostics log and report (including redaction of your home folder path), the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
+Covered: the vocabulary store (search, filter, statistics, deletion, editing), the persistent diagnostics log and crash detection, furigana, hiragana readings, okurigana trimming, pinyin, and transliteration, the Anki package (opened and inspected after being built: schema, model, notes, cards, media, checksums), CSV export, title cleanup and match variants, the lyrics version list and its ranking, how LRCLIB replies are classified, podcast detection, the playback tracker (driven by a fake player, including a simulated 25 seconds of ticks), the adaptive loop pace, the loop range, quiz generation and answer matching, SRT and text export, shortcut key combinations and conflict detection, the lyrics parser, lyrics version selection, per-line language detection, detection of romanized lyrics (including samples that must not be flagged), romaji and Korean romanization, romaji-to-script conversion, the diagnostics log and report (including redaction of your home folder path), the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
 
 Not covered: the interface (menu card, floating window, Settings) and the integration with Spotify and Apple Music (the AppleScript calls themselves).
 
@@ -317,7 +319,7 @@ The casual-style rules (`Sources/Core/Casual.swift`) are decided by the **transl
 
 **No lyrics show up and the menu bar only shows ♪.** Make sure the Automation permission was granted (System Settings > Privacy & Security > Automation), and that Spotify or Apple Music is playing a song. If the song simply is not in LRCLIB, the menu bar shows the song title and the floating window shows "Lyrics unavailable".
 
-**Reporting a problem.** Open **Settings > About** and press **Copy diagnostics**, then paste the result into a [GitHub issue](https://github.com/mohizzatulhaqi/spotlyrics/issues). The report lists the app and macOS versions, your settings, the Automation permission status, cache sizes, which translation languages are installed, and the last few events. It contains no song titles, artists, or lyrics, and your home folder path is replaced by `~`. It is only copied to your clipboard; nothing is sent anywhere.
+**Reporting a problem.** Open **Settings > About** and press **Copy diagnostics**, then paste the result into a [GitHub issue](https://github.com/mohizzatulhaqi/spotlyrics/issues). The report lists the app and macOS versions, your settings, the Automation permission status, cache sizes, which translation languages are installed, the last few events, and the events of the previous session together with whether it ended cleanly (an unclean end is a hint of a crash). The events are also kept in `diagnostics.log` in the data folder (the last 400 lines, trimmed at each launch). It contains no song titles, artists, or lyrics, and your home folder path is replaced by `~`. It is only copied to your clipboard; nothing is sent anywhere.
 
 **The wrong version of the lyrics.** Use **This song > Choose lyrics version…** to pick another one from the list. **Reload lyrics from LRCLIB** ignores the cache and any pinned choice and searches again.
 
