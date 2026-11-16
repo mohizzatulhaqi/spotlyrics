@@ -30,10 +30,16 @@ enum Readings {
     }
 
     static func romanize(_ text: String, lang: String) -> String {
-        guard hasCJK(text) else { return "" }
-        if lang == "ja" { return japanese(text) }
-        if lang == "ko" { return korean(text) }
-        return ""
+        let base = Locale.Language(identifier: lang).languageCode?.identifier ?? lang
+        switch base {
+        case "ja": return hasCJK(text) ? japanese(text) : ""
+        case "ko": return hasCJK(text) ? korean(text) : ""
+        case "zh": return hasHan(text) ? pinyin(text) : ""
+        case "ru": return hasCyrillic(text) ? cyrillic(text) : ""
+        case "uk": return hasCyrillic(text) ? cyrillic(text, ukrainian: true) : ""
+        case "el", "hi": return hasGreekOrDevanagari(text) ? greekOrDevanagari(text) : ""
+        default: return ""
+        }
     }
 
     static func japanese(_ s: String) -> String {

@@ -54,7 +54,7 @@ extension AppDelegate {
 
     func updateFloat(idx: Int?) {
         guard floatOn else { return }
-        let sig = "\(trackKey)#\(idx ?? -1)#\(transKey == trackKey ? trans.count : -1)#\(displayMode)#\(loaded)#\(lines.count)#\(romaji.count)#\(Prefs.showRomaji)#\(lyricsSynced)"
+        let sig = "\(trackKey)#\(idx ?? -1)#\(transKey == trackKey ? trans.count : -1)#\(displayMode)#\(loaded)#\(lines.count)#\(romaji.count)#\(Prefs.showRomaji)#\(lyricsSynced)#\(Prefs.readingStyle)"
         guard sig != floatSig else { return }
         floatSig = sig
         MainActor.assumeIsolated {
@@ -81,14 +81,19 @@ extension AppDelegate {
             let nx = (idx ?? -1) + 1
             let orig = idx.map(text) ?? "♪"
             let tr = (transKey == trackKey && idx != nil && idx! < trans.count) ? trans[idx!] : ""
-            let rm = (Prefs.showRomaji && displayMode != "trans" && idx != nil && idx! < romaji.count) ? romaji[idx!] : ""
+            var ruby: [RubyToken] = []
+            if Prefs.readingStyle == "furigana", displayMode != "trans", let i = idx, i < lineLangs.count,
+               (Locale.Language(identifier: lineLangs[i]).languageCode?.identifier ?? "") == "ja", Readings.hasHan(lines[i].text) {
+                ruby = Readings.japaneseRuby(lines[i].text)
+            }
+            let rm = (ruby.isEmpty && Prefs.showRomaji && displayMode != "trans" && idx != nil && idx! < romaji.count) ? romaji[idx!] : ""
             let cur: String, sub: String
             switch displayMode {
             case "trans": cur = tr.isEmpty ? orig : tr; sub = ""
             case "both": cur = orig; sub = tr
             default: cur = orig; sub = ""
             }
-            f.set(prev: (idx ?? 0) > 0 ? text(idx! - 1) : "", cur: cur, sub: sub, next: nx < lines.count ? text(nx) : "", rom: rm)
+            f.set(prev: (idx ?? 0) > 0 ? text(idx! - 1) : "", cur: cur, sub: sub, next: nx < lines.count ? text(nx) : "", rom: rm, ruby: ruby)
         }
     }
 

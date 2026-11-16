@@ -18,10 +18,12 @@ final class FloatModel: ObservableObject {
     @Published var artwork: NSImage?
     @Published var accent: Color?
     @Published var plain: [PlainLine] = []
+    @Published var ruby: [RubyToken] = []
     var onClose: () -> Void = {}
 
-    func set(prev: String, cur: String, sub: String, next: String, rom: String = "") {
+    func set(prev: String, cur: String, sub: String, next: String, rom: String = "", ruby: [RubyToken] = []) {
         self.prev = prev; self.cur = cur; self.sub = sub; self.next = next; self.rom = rom
+        self.ruby = ruby
         plain = []
     }
 
@@ -83,13 +85,19 @@ struct FloatView: View {
                 Spacer(minLength: 0)
                 Text(m.prev).font(.system(size: 14, weight: .medium))
                     .foregroundStyle(.white.opacity(0.4)).lineLimit(1)
-                Text(m.cur).font(.system(size: 28, weight: .heavy))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2).minimumScaleFactor(0.6)
-                    .shadow(color: (m.accent ?? .black).opacity(0.55), radius: 9, y: 1)
-                    .id(m.cur)
-                    .transition(.opacity)
+                Group {
+                    if !m.ruby.isEmpty {
+                        RubyLine(tokens: m.ruby, size: 28)
+                    } else {
+                        Text(m.cur).font(.system(size: 28, weight: .heavy))
+                            .foregroundStyle(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2).minimumScaleFactor(0.6)
+                    }
+                }
+                .shadow(color: (m.accent ?? .black).opacity(0.55), radius: 9, y: 1)
+                .id(m.cur)
+                .transition(.opacity)
                 if !m.rom.isEmpty {
                     Text(m.rom).font(.system(size: 15, weight: .regular).italic())
                         .foregroundStyle(.white.opacity(0.6))
