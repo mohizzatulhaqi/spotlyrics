@@ -49,7 +49,8 @@ SpotLyrics reads the song playing in the Spotify desktop app, fetches time-stamp
 
 **Readings and study**
 - **Readings** under the original lyrics: romaji for Japanese (kanji are read with proper Japanese readings) and Revised Romanization for Korean.
-- **Study mode**: click a word to see its meaning, click a line to translate it, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
+- **Study mode**: click a word to see its meaning, click a line to translate it, **double-click a line to jump to that moment in the song**, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
+- **Romanization detection**: when the lyrics of a song look like Japanese romaji or romanized Korean, the app notices and offers to translate them as the right language.
 
 **Player and interface**
 - A player card in the menu: album cover, a progress bar you can click or drag to seek, and previous, play/pause, and next buttons.
@@ -119,6 +120,7 @@ A window that shows the whole lyrics with the current line highlighted.
 
 - Click a **word** to see its meaning. For English lyrics, the definition from the built-in macOS dictionary is shown as well.
 - Click a **line**, then press **Translate**, to translate that line.
+- **Double-click a line** to make Spotify jump to the moment that line is sung. Useful for replaying a sentence you are learning.
 - **Save word** adds the word, its meaning, the source line, and the song title to your vocabulary list.
 - **Export to Anki** writes `SpotLyrics-vocab.tsv` to your Downloads folder. In Anki, choose File > Import and pick that file. The first column becomes the front of the card and the second column the back.
 
@@ -128,7 +130,13 @@ Turn it on from the icon on the card, from Settings, or with **⌃⌥L**. Drag a
 
 ### Song language
 
-If automatic detection gets a song wrong, or the lyrics are written in Latin letters, open **This song > Song language** and pick the language. **Japanese (romaji)** and **Korean (romanization)** first convert the Latin text to Hiragana or Hangul and then translate it, which gives much better results. The Korean conversion is not perfect, because Korean romanization is ambiguous by nature. The choice is stored per song.
+When the lyrics of a song look like Japanese romaji or romanized Korean, a banner appears in the menu card (and the menu bar briefly flashes a hint) asking whether to translate them as Japanese or Korean. Press **Yes, switch** to accept, or **Dismiss** to stop being asked for that song.
+
+<p align="center">
+  <img src="docs/screenshots/romanized-suggestion.png" alt="The romanization suggestion banner in the menu card" width="300">
+</p>
+
+If automatic detection gets a song wrong, or you prefer to choose yourself, open **This song > Song language** and pick the language. **Japanese (romaji)** and **Korean (romanization)** first convert the Latin text to Hiragana or Hangul and then translate it, which gives much better results. The Korean conversion is not perfect, because Korean romanization is ambiguous by nature. The choice is stored per song.
 
 ## Settings
 
@@ -140,6 +148,7 @@ Open with **⌘,** or the **Settings…** menu item.
 | **Translation** | Casual style, target language, lyrics-language mode, and a list of languages to download with their status |
 | **Appearance** | Show readings (romaji), accent color from the cover |
 | **Shortcuts** | A switch for global shortcuts and the list of shortcuts |
+| **About** | App version, **Copy diagnostics**, a shortcut to the data folder, and a link to report an issue |
 
 In the Translation tab, each language row shows **Installed**, **Download**, or **Not supported**. While a download runs you see a spinner and a running timer. macOS does not report a download percentage, so real progress is only visible in the system download dialog.
 
@@ -183,6 +192,8 @@ LRCLIB ◀── get / search ── Lyrics.load ──▶ disk cache ───�
 
 **Readings.** For Japanese the app uses `CFStringTokenizer` with the Japanese locale, because the system's plain transliteration reads kanji as Mandarin pinyin. The particles は, へ, を are written `wa`, `e`, `o`, and a small っ doubles the following consonant. For Korean, a Revised Romanization converter is written in-house and handles sound changes between syllables, ㅎ dropping out, nasalization, and palatalization.
 
+**Detecting romanized lyrics.** For lyrics written in Latin letters, the app counts how many words belong to a list of distinctly Japanese or Korean words (particles such as `wa` and `wo`, common words, and typical verb endings). If enough of the text matches and the lyrics have no native script, it suggests the language. Words that also exist in English, Spanish, or Indonesian are left out of the lists on purpose. On a check against several hundred real lyric versions from LRCLIB, it flagged only genuinely romanized lyrics and none of the English, Spanish, Indonesian, or native-script ones.
+
 **Accent color.** The cover is downscaled to 32×32 pixels, bucketed into 12 hue groups, and weighted by saturation and brightness. The winning group is adjusted so it stays readable on a dark background.
 
 ## Project structure
@@ -199,6 +210,8 @@ Sources/
     Detect.swift                per-line language detection
     Readings.swift              romaji, Korean romanization, romaji-to-script conversion
     Casual.swift                casual-style rules (id and en)
+    Romanized.swift             detection of romanized Japanese and Korean lyrics
+    Diagnostics.swift           event log and diagnostics report formatting
     Playback.swift              position interpolation, seek, marquee
     Palette.swift               accent color selection from pixels
   Audio/AudioOut.swift          active audio output and per-device offset
@@ -244,7 +257,7 @@ What leaves your device:
 
 The script compiles `Sources/Core/*.swift` together with `Tests/main.swift` and runs the result. The tests need no network, no Spotify, and no full Xcode. Exit code 0 means everything passed.
 
-Covered: the lyrics parser, lyrics version selection, per-line language detection, romaji and Korean romanization, romaji-to-script conversion, the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
+Covered: the lyrics parser, lyrics version selection, per-line language detection, detection of romanized lyrics (including samples that must not be flagged), romaji and Korean romanization, romaji-to-script conversion, the diagnostics log and report (including redaction of your home folder path), the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
 
 Not covered: the interface (menu card, floating window, Settings) and the integration with Spotify.
 
@@ -265,6 +278,8 @@ The casual-style rules (`Sources/Core/Casual.swift`) are decided by the **transl
 
 **No lyrics show up and the menu bar only shows ♪.** Make sure the Automation permission was granted (System Settings > Privacy & Security > Automation), and that the Spotify desktop app is playing a song. If the song simply is not in LRCLIB, the menu bar shows the song title and the floating window shows "Lyrics unavailable".
 
+**Reporting a problem.** Open **Settings > About** and press **Copy diagnostics**, then paste the result into a [GitHub issue](https://github.com/mohizzatulhaqi/spotlyrics/issues). The report lists the app and macOS versions, your settings, the Automation permission status, cache sizes, which translation languages are installed, and the last few events. It contains no song titles, artists, or lyrics, and your home folder path is replaced by `~`. It is only copied to your clipboard; nothing is sent anywhere.
+
 **The wrong version of the lyrics.** Use **This song > Reload lyrics from LRCLIB** to ignore the cache and search again.
 
 **Translation failed.** Usually the language pack has not been downloaded. Open **Settings > Translation**, find the lyrics language and the target language, and press **Download**. The download dialog comes from macOS and can take a while. Once the status shows **Installed**, press **Try again**.
@@ -283,6 +298,7 @@ The casual-style rules (`Sources/Core/Casual.swift`) are decided by the **transl
 
 - **Translation style.** Apple Translation has no style setting. Casual style only smooths formal wording through simple rules for Indonesian and English targets, so stiffness that comes from sentence structure cannot be changed. Apple's on-device language model (Apple Intelligence) is not used because it does not support Indonesian and often refuses lyric text.
 - **Korean romanization** converted back to Hangul can be misspelled. That is inherent to how ambiguous Korean romanization is.
+- **Romanization detection is a heuristic.** It needs enough lines of text (at least about 30 words) and can miss unusual or very short lyrics. You can always pick the language yourself under **This song > Song language**.
 - **A download percentage** for language packs is not available from Apple's API. You only get a spinner and a timer.
 - **Spotify desktop only.** Other players are not supported yet.
 - **Not notarized.** The binary cannot be shared directly with another Mac without rebuilding it there.
