@@ -1,8 +1,8 @@
 # SpotLyrics
 
-Synced Spotify lyrics in the macOS menu bar, with on-device translation, pronunciation readings (romaji), and a language study mode.
+Synced lyrics for Spotify and Apple Music in the macOS menu bar, with on-device translation, pronunciation readings (romaji), and a language study mode.
 
-SpotLyrics reads the song playing in the Spotify desktop app, fetches time-stamped lyrics from [LRCLIB](https://lrclib.net), and shows them in the menu bar, in a karaoke-style floating window, and on a player card inside the menu. Translation runs entirely on your device using Apple's Translation framework, so no lyrics are sent to a translation service.
+SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, fetches time-stamped lyrics from [LRCLIB](https://lrclib.net), and shows them in the menu bar, in a karaoke-style floating window, and on a player card inside the menu. Translation runs entirely on your device using Apple's Translation framework, so no lyrics are sent to a translation service.
 
 <p align="center">
   <img src="docs/screenshots/menu.png" alt="The player card in the SpotLyrics menu" width="300">
@@ -37,6 +37,8 @@ SpotLyrics reads the song playing in the Spotify desktop app, fetches time-stamp
 - Synced lyrics from LRCLIB, shown line by line in the menu bar. Lines longer than 40 characters scroll slowly (marquee) instead of being cut off.
 - A **floating lyrics** window in karaoke style: a large current line, dimmer lines before and after it, and the translation underneath. It stays above other windows, follows you across Spaces, and can be dragged anywhere.
 - When LRCLIB has several versions of a song, the app prefers a version in the native script (Hangul, Kana) with a matching duration over a romanized one.
+- Works with **Spotify** and **Apple Music**. In automatic mode the app follows whichever player is running and playing, and you can force one in Settings.
+- **Unsynced lyrics as a fallback.** When LRCLIB only has plain text for a song (no timestamps), the app still shows it: as a scrollable text in the floating window and in Study mode, with translations. Synced versions always win when they exist.
 - Lyrics are cached on disk, so songs you have played before appear instantly and keep working offline.
 - Per-output lyrics offset. Bluetooth outputs start with a −0.2 s compensation, and your adjustments are remembered per device (AirPods, speakers, and so on).
 - **Copy and export**: copy the current line or all the lyrics (with translations and readings) to the clipboard, or export them as an SRT subtitle file or plain text.
@@ -50,7 +52,7 @@ SpotLyrics reads the song playing in the Spotify desktop app, fetches time-stamp
 
 **Readings and study**
 - **Readings** under the original lyrics: romaji for Japanese (kanji are read with proper Japanese readings) and Revised Romanization for Korean.
-- **Study mode**: click a word to see its meaning, click a line to translate it, **double-click a line to jump to that moment in the song**, **loop a section** between two lines, take a **fill-in-the-blank quiz** built from the lyrics, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
+- **Study mode**: click a word to see its meaning, **hear it spoken** with the built-in macOS voices, click a line to translate it, **double-click a line to jump to that moment in the song**, **loop a section** between two lines, take a **fill-in-the-blank quiz** built from the lyrics, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
 - **Romanization detection**: when the lyrics of a song look like Japanese romaji or romanized Korean, the app notices and offers to translate them as the right language.
 
 **Player and interface**
@@ -65,7 +67,7 @@ SpotLyrics reads the song playing in the Spotify desktop app, fetches time-stamp
 | | |
 |---|---|
 | macOS | **26 (Tahoe) or later.** The on-device translation API the app uses is only available from this version |
-| Spotify | The desktop app (not the web player) |
+| Music player | The Spotify desktop app (not the web player) and/or Apple Music |
 | To build | Xcode or the Command Line Tools with Swift 6.2 or later |
 
 Languages you want to translate from must be downloaded through macOS first. The app lists them in **Settings > Translation**, and the download itself is handled by the standard macOS dialog.
@@ -85,8 +87,8 @@ open SpotLyrics.app
 
 Things to know:
 
-- **Automation permission.** On first launch macOS asks whether SpotLyrics may control Spotify. Allow it. If you denied it by mistake, turn it on in **System Settings > Privacy & Security > Automation**.
-- **Setup guide.** On first launch a short checklist window checks that Spotify is running, that the Automation permission is granted, and which language lyrics should be translated into (the default follows the app language or the system language). It refreshes by itself while open, and you can reopen it any time from **Settings > About**.
+- **Automation permission.** The first time SpotLyrics talks to a player, macOS asks whether it may control it (Spotify and Apple Music are asked separately). Allow it. If you denied it by mistake, turn it on in **System Settings > Privacy & Security > Automation**.
+- **Setup guide.** On first launch a short checklist window checks that a music player is running, that the Automation permission is granted, and which language lyrics should be translated into (the default follows the app language or the system language). It refreshes by itself while open, and you can reopen it any time from **Settings > About**.
 - **Ad-hoc signature.** This is enough on the Mac that built the app. If you copy the `.app` to another Mac, Gatekeeper rejects it because it is not notarized. The simplest fix is to build it again on that Mac.
 - **Launch at login** only works when the app runs as `SpotLyrics.app`, not as a bare binary.
 - The build uses the architecture of the machine that builds it.
@@ -122,9 +124,10 @@ A window that shows the whole lyrics with the current line highlighted.
 
 - Click a **word** to see its meaning. For English lyrics, the definition from the built-in macOS dictionary is shown as well.
 - Click a **line**, then press **Translate**, to translate that line.
-- **Double-click a line** to make Spotify jump to the moment that line is sung. Useful for replaying a sentence you are learning.
-- **Loop a section.** Select a line and press **Start (A)**, select another line and press **End (B)**. Spotify then repeats that part until you press **Clear**. The looped lines are highlighted.
+- **Double-click a line** to make the player jump to the moment that line is sung. Useful for replaying a sentence you are learning.
+- **Loop a section.** Select a line and press **Start (A)**, select another line and press **End (B)**. The player then repeats that part until you press **Clear**. The looped lines are highlighted.
 - **Quiz.** The **Quiz** button opens a fill-in-the-blank quiz: a random line from the song with one word hidden, its translation as a hint, and a score. Answers ignore case, accents, and punctuation. **Play line** replays the line from the song. It works for languages without spaces too, such as Japanese.
+- **Speak** reads the selected word (or the selected line) aloud in the language of the lyrics, using the voices built into macOS. Press it again to stop. In the quiz, **Speak line** reads the whole line. If a language has no voice installed, the app tells you where to add one (System Settings > Accessibility > Spoken Content).
 - **Save word** adds the word, its meaning, the source line, and the song title to your vocabulary list.
 - **Export to Anki** writes `SpotLyrics-vocab.tsv` to your Downloads folder. In Anki, choose File > Import and pick that file. The first column becomes the front of the card and the second column the back.
 
@@ -176,7 +179,7 @@ After each shortcut the menu bar shows a short message for about 1.5 seconds as 
 ## How it works
 
 ```
-Spotify ──(AppleScript + distributed notification)──▶ Snap (song, position, state)
+Spotify / Apple Music ──(AppleScript + distributed notification)──▶ Snap (song, position, state)
                                                           │
                        position is computed locally between fetches
                                                           │
@@ -189,7 +192,9 @@ LRCLIB ◀── get / search ── Lyrics.load ──▶ disk cache ───�
                     menu bar · menu card · floating window · Study mode
 ```
 
-**Reading Spotify.** Track metadata, position, and state come from AppleScript, behind a small `PlayerSource` interface (so the loop can be tested with a fake player, and other players could be added later). To save energy the app does not call AppleScript constantly. Spotify posts the distributed notification `com.spotify.client.PlaybackStateChanged` when the track, play/pause state, or position changes, and that is when the app fetches data. `PlaybackTracker` decides when a fetch is really needed: in between, the position is computed from the system clock while the state is "playing", and as a safety net the data is resynchronized every 10 seconds while playing and every 30 seconds while paused. The main loop also adapts its own pace: about every 0.3 s while playing or while the menu is open, every 0.5 s during ads, every 1 s while paused, and every 2 s while Spotify is not running (it wakes up immediately when Spotify launches or sends a notification).
+**Reading the player.** Track metadata, position, and state come from AppleScript, behind a small `PlayerSource` interface with two implementations, `SpotifyPlayer` and `AppleMusicPlayer`, so the loop can be tested with a fake player and more players can be added. `RoutingPlayer` picks the active one: in automatic mode it uses the only player that is running, or the one that is playing when both run (it peeks at the other one every few seconds while the active one is paused). Apple Music has no cover URL, so its artwork is read as image data through AppleScript. To save energy the app does not call AppleScript constantly. Spotify posts the distributed notification `com.spotify.client.PlaybackStateChanged` (Apple Music posts `com.apple.Music.playerInfo`) when the track, play/pause state, or position changes, and that is when the app fetches data. `PlaybackTracker` decides when a fetch is really needed: in between, the position is computed from the system clock while the state is "playing", and as a safety net the data is resynchronized every 10 seconds while playing and every 30 seconds while paused. The main loop also adapts its own pace: about every 0.3 s while playing or while the menu is open, every 0.5 s during ads, every 1 s while paused, and every 2 s while no player is running (it wakes up immediately when a player launches or sends a notification).
+
+**Choosing a lyrics version.** `Lyrics.choose` ranks the candidates: a synced version whose duration matches (native script preferred), then any synced version, then a plain-text version. Plain-text lyrics are checked again after a week in case a synced version appeared.
 
 **Fetching lyrics.** `Lyrics.load` queries LRCLIB (the `get` endpoint, then `search`), collects several versions, and picks one in the native script whose duration differs by at most 5 seconds. The result is stored on disk. A song that is not found is remembered for 24 hours, but only when the LRCLIB server was actually reachable, so nothing is wrongly recorded while you are offline.
 
@@ -220,7 +225,8 @@ Sources/
     Romanized.swift             detection of romanized Japanese and Korean lyrics
     Diagnostics.swift           event log and diagnostics report formatting
     Playback.swift              position interpolation, seek, loop range, marquee
-    Tracker.swift               PlayerSource interface, PlaybackTracker, loop pace
+    Tracker.swift               PlayerSource interface, PlaybackTracker, player choice, loop pace
+    Speech.swift                language-to-voice mapping for spoken lines
     Cloze.swift                 fill-in-the-blank quiz items and answer matching
     LyricsExport.swift          SRT and text export, file names
     KeyCombo.swift              shortcut key combinations, conflicts, permission and setup state
@@ -231,7 +237,8 @@ Sources/
   UI/                           SwiftUI views: menu card, floating lyrics, Settings
   App/                          AppDelegate and its extensions (playback, translation,
                                 floating lyrics, shortcuts, study, export, setup,
-                                diagnostics, system) and SpotifyPlayer
+                                diagnostics, system) and the player classes
+                                (SpotifyPlayer, AppleMusicPlayer, RoutingPlayer)
 Tests/
   main.swift                    hundreds of checks for Sources/Core
   run.sh                        test builder and runner
@@ -257,7 +264,7 @@ To remove all app data, delete the `SpotLyrics` folder in Application Support an
 
 What leaves your device:
 - **LRCLIB** receives the track title, artist name, album, and duration so it can look up lyrics. There are no accounts, no API keys, and no tracking.
-- **Album covers** are downloaded from Spotify's CDN through the URL Spotify provides.
+- **Album covers** from Spotify are downloaded from Spotify's CDN through the URL Spotify provides. Apple Music covers are read locally from the Music app.
 - **Translation never leaves your device.** Everything runs in Apple Translation. Downloading language packs is done by macOS.
 - There is no analytics and no telemetry.
 
@@ -271,7 +278,7 @@ The script compiles `Sources/Core/*.swift` together with `Tests/main.swift` and 
 
 Covered: the playback tracker (driven by a fake player, including a simulated 25 seconds of ticks), the adaptive loop pace, the loop range, quiz generation and answer matching, SRT and text export, shortcut key combinations and conflict detection, the lyrics parser, lyrics version selection, per-line language detection, detection of romanized lyrics (including samples that must not be flagged), romaji and Korean romanization, romaji-to-script conversion, the diagnostics log and report (including redaction of your home folder path), the marquee, position interpolation and seeking, casual style, accent color selection, preferences and the initial target language, the on-disk cache, and completeness of the text tables (every key exists in both languages with the same placeholders).
 
-Not covered: the interface (menu card, floating window, Settings) and the integration with Spotify.
+Not covered: the interface (menu card, floating window, Settings) and the integration with Spotify and Apple Music (the AppleScript calls themselves).
 
 The Japanese reading tests depend on the tokenizer dictionary built into macOS, so one or two cases may shift when the macOS version changes. The test names are still in Indonesian.
 
@@ -288,7 +295,7 @@ The casual-style rules (`Sources/Core/Casual.swift`) are decided by the **transl
 
 ## Troubleshooting
 
-**No lyrics show up and the menu bar only shows ♪.** Make sure the Automation permission was granted (System Settings > Privacy & Security > Automation), and that the Spotify desktop app is playing a song. If the song simply is not in LRCLIB, the menu bar shows the song title and the floating window shows "Lyrics unavailable".
+**No lyrics show up and the menu bar only shows ♪.** Make sure the Automation permission was granted (System Settings > Privacy & Security > Automation), and that Spotify or Apple Music is playing a song. If the song simply is not in LRCLIB, the menu bar shows the song title and the floating window shows "Lyrics unavailable".
 
 **Reporting a problem.** Open **Settings > About** and press **Copy diagnostics**, then paste the result into a [GitHub issue](https://github.com/mohizzatulhaqi/spotlyrics/issues). The report lists the app and macOS versions, your settings, the Automation permission status, cache sizes, which translation languages are installed, and the last few events. It contains no song titles, artists, or lyrics, and your home folder path is replaced by `~`. It is only copied to your clipboard; nothing is sent anywhere.
 
@@ -312,7 +319,7 @@ The casual-style rules (`Sources/Core/Casual.swift`) are decided by the **transl
 - **Korean romanization** converted back to Hangul can be misspelled. That is inherent to how ambiguous Korean romanization is.
 - **Romanization detection is a heuristic.** It needs enough lines of text (at least about 30 words) and can miss unusual or very short lyrics. You can always pick the language yourself under **This song > Song language**.
 - **A download percentage** for language packs is not available from Apple's API. You only get a spinner and a timer.
-- **Spotify desktop only.** Other players are not supported yet.
+- **Spotify desktop and Apple Music only.** Other players are not supported yet, and web players cannot be read at all.
 - **Not notarized.** The binary cannot be shared directly with another Mac without rebuilding it there.
 - **Lyrics coverage** depends on the LRCLIB database.
 
