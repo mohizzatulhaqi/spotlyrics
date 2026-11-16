@@ -34,6 +34,8 @@ extension AppDelegate {
 
     @objc func openLang() { openSettings(tab: "terjemahan") }
 
+    @objc func openVersionPickerAction() { openVersionPicker() }
+
     @objc func openSettingsAction() { openSettings(tab: nil) }
 
     func openSettings(tab: String?) {
@@ -92,6 +94,7 @@ extension AppDelegate {
         quitItem.title = L(.quit)
         settingsWindow?.title = L(.settingsTitle)
         quizWindow?.title = L(.quizTitle)
+        versionWindow?.title = L(.pickTitle)
         setupWindow?.title = L(.setupTitle)
         learn.relocalize()
         floatSig = ""
@@ -99,6 +102,7 @@ extension AppDelegate {
         MainActor.assumeIsolated {
             menuModel?.langTick += 1
             quizModel?.langTick += 1
+            versionModel?.langTick += 1
             setupModel?.langTick += 1
             langModel?.langTick += 1
         }
@@ -196,7 +200,7 @@ extension AppDelegate {
 
     func rebuildSongMenu() {
         songMenu.removeAllItems()
-        let hasTrack = !trackKey.isEmpty && !lastIsAd
+        let hasTrack = !trackKey.isEmpty && !lastIsAd && !lastIsEpisode
         songItem.isEnabled = hasTrack
         guard hasTrack else { return }
         if hasForeign || Prefs.songOverride(trackKey) != nil {
@@ -206,6 +210,10 @@ extension AppDelegate {
         }
         reloadItem.target = self
         songMenu.addItem(reloadItem)
+        let pick = NSMenuItem(title: L(.pickMenu), action: #selector(openVersionPickerAction), keyEquivalent: "")
+        pick.target = self
+        pick.image = NSImage(systemSymbolName: "list.bullet.rectangle", accessibilityDescription: nil)
+        songMenu.addItem(pick)
         if !lines.isEmpty { songMenu.addItem(copyExportItem()) }
     }
 

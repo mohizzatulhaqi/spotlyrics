@@ -87,11 +87,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var lastLoopJump = Date.distantPast
     var quizWindow: NSWindow?
     var quizModel: QuizModel?
+    var versionWindow: NSWindow?
+    var versionModel: VersionModel?
     var menuOpen = false
     var lastPosMs = 0, lastDurMs = 0
     var lastPlaying = false
     var lastIdx: Int?
     var lastIsAd = false
+    var lastIsEpisode = false
 
 
     func applicationDidFinishLaunching(_ n: Notification) {
@@ -220,9 +223,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
                 mm.title = curTitle
                 mm.subtitle = curArtist
             }
-            mm.status = lastIsAd ? L(.adWaiting) : st.text
+            mm.status = lastIsAd ? L(.adWaiting) : (lastIsEpisode ? L(.podcastNoLyrics) : st.text)
             mm.failing = failing && !lastIsAd
-            mm.kind = lastIsAd ? 2 : st.kind
+            mm.kind = lastIsAd ? 2 : (lastIsEpisode ? 0 : st.kind)
             mm.device = devName.isEmpty ? "-" : devName
             mm.offsetText = String(format: "%+.2fs", offset)
             if mm.mode != displayMode { mm.mode = displayMode }

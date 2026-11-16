@@ -75,7 +75,7 @@ extension AppDelegate {
         MainActor.assumeIsolated {
             guard let mm = menuModel else { return }
             if lines.isEmpty {
-                mm.lyric = loaded ? L(.lyricsUnavailable) : L(.lyricsLoading)
+                mm.lyric = lastIsEpisode ? L(.podcastNoLyrics) : (loaded ? L(.lyricsUnavailable) : L(.lyricsLoading))
                 mm.lyricTrans = ""
                 return
             }
@@ -104,6 +104,8 @@ extension AppDelegate {
             mm.playing = lastPlaying
             mm.hasTrack = !trackKey.isEmpty
             mm.isAd = lastIsAd
+            mm.isEpisode = lastIsEpisode
+            if lastIsEpisode { mm.hasTrack = true }
         }
     }
 
@@ -225,6 +227,8 @@ extension AppDelegate {
             lastIsAd = isAd
             setArtwork(nil)
         }
+        let isEpisode = sp.isEpisode
+        lastIsEpisode = isEpisode
         if isAd {
             trackKey = ""
             lines = []
@@ -269,7 +273,11 @@ extension AppDelegate {
             } else if let data = router.artworkData(), let img = NSImage(data: data) {
                 setArtwork(img)
             }
-            loadLyrics(title: title, artist: artist, album: album, duration: durMs / 1000, key: key, refresh: false)
+            if isEpisode {
+                loaded = true
+            } else {
+                loadLyrics(title: title, artist: artist, album: album, duration: durMs / 1000, key: key, refresh: false)
+            }
         }
 
         let pos = Playback.effective(posMs: posMs, offset: offset)
@@ -286,7 +294,9 @@ extension AppDelegate {
 
         if loaded, !lines.isEmpty, transKey != trackKey, !transBusy { ensureTranslation() }
 
-        if learn.window.isVisible, !loaded {
+        if learn.window.isVisible, isEpisode {
+            showLearnEmpty(L(.podcastNoLyrics))
+        } else if learn.window.isVisible, !loaded {
             showLearnEmpty(L(.lyricsLoading))
         } else if learn.window.isVisible {
             let showRm = Prefs.showRomaji
@@ -306,6 +316,10 @@ extension AppDelegate {
         if Date() < flashUntil { setTitle(flashText); return }
         if hidden { return }
         let prefix = state == "playing" ? "" : "⏸ "
+        if isEpisode {
+            setTitle(prefix + "🎙 \(title)")
+            return
+        }
         if lines.isEmpty || !lyricsSynced {
             setTitle(prefix + (loaded ? "♪ \(title)" : "♪ …"))
             return

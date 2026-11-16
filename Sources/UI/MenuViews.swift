@@ -24,6 +24,7 @@ final class MenuModel: ObservableObject {
     @Published var playing = false
     @Published var hasTrack = false
     @Published var isAd = false
+    @Published var isEpisode = false
     @Published var lyric = ""
     @Published var lyricTrans = ""
     @Published var mode = "orig" {
@@ -120,7 +121,7 @@ struct HeaderCard: View {
                     } else {
                         ZStack {
                             Color.white.opacity(0.12)
-                            Image(systemName: m.isAd ? "megaphone.fill" : "music.note")
+                            Image(systemName: m.isAd ? "megaphone.fill" : (m.isEpisode ? "mic.fill" : "music.note"))
                                 .font(.system(size: 24, weight: .semibold)).foregroundStyle(.white)
                         }
                     }
@@ -188,6 +189,7 @@ struct HeaderCard: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.white)
 
+                if !m.isEpisode {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(m.lyric).font(.system(size: 15, weight: .bold)).foregroundStyle(.white).lineLimit(2)
                     if !m.lyricTrans.isEmpty {
@@ -199,6 +201,7 @@ struct HeaderCard: View {
                 .padding(10)
                 .background(Color.white.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).stroke((m.accent ?? .clear).opacity(0.5), lineWidth: 1))
+                }
                 }
             }
             HStack(alignment: .top, spacing: 6) {
@@ -227,7 +230,7 @@ struct HeaderCard: View {
                 }
                 .controlSize(.small)
             }
-            if !m.isAd {
+            if !m.isAd && !m.isEpisode {
                 HStack(spacing: 6) {
                     pill("orig", L(.pillOriginal))
                     pill("trans", L(.pillTranslation))

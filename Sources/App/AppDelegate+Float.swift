@@ -60,6 +60,10 @@ extension AppDelegate {
         MainActor.assumeIsolated {
             guard let f = floatModel else { return }
             if lines.isEmpty {
+                if lastIsEpisode {
+                    f.set(prev: "", cur: L(.podcastNoLyrics), sub: "", next: "")
+                    return
+                }
                 f.set(prev: "", cur: loaded ? L(.lyricsUnavailable) : L(.lyricsLoading), sub: "", next: "")
                 return
             }
