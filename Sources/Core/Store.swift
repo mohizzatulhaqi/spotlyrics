@@ -27,8 +27,8 @@ enum Store {
         guard let d = try? Data(contentsOf: lyricsFile(key)) else { return nil }
         return try? JSONDecoder().decode(CachedLyrics.self, from: d)
     }
-    static func writeLyrics(_ key: String, _ lines: [Line]) {
-        if let d = try? JSONEncoder().encode(CachedLyrics(saved: Date(), lines: lines)) {
+    static func writeLyrics(_ key: String, _ lines: [Line], synced: Bool = true) {
+        if let d = try? JSONEncoder().encode(CachedLyrics(saved: Date(), lines: lines, synced: synced)) {
             try? d.write(to: lyricsFile(key), options: .atomic)
         }
     }

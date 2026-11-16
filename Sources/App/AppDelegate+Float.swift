@@ -54,13 +54,23 @@ extension AppDelegate {
 
     func updateFloat(idx: Int?) {
         guard floatOn else { return }
-        let sig = "\(trackKey)#\(idx ?? -1)#\(transKey == trackKey ? trans.count : -1)#\(displayMode)#\(loaded)#\(lines.count)#\(romaji.count)#\(Prefs.showRomaji)"
+        let sig = "\(trackKey)#\(idx ?? -1)#\(transKey == trackKey ? trans.count : -1)#\(displayMode)#\(loaded)#\(lines.count)#\(romaji.count)#\(Prefs.showRomaji)#\(lyricsSynced)"
         guard sig != floatSig else { return }
         floatSig = sig
         MainActor.assumeIsolated {
             guard let f = floatModel else { return }
             if lines.isEmpty {
                 f.set(prev: "", cur: loaded ? L(.lyricsUnavailable) : L(.lyricsLoading), sub: "", next: "")
+                return
+            }
+            if !lyricsSynced {
+                let tr = transKey == trackKey ? trans : []
+                let showRm = Prefs.showRomaji && displayMode != "trans"
+                f.setPlain(lines.indices.map { i in
+                    let t = i < tr.count ? tr[i] : ""
+                    let r = showRm && i < romaji.count ? romaji[i] : ""
+                    return PlainLine(id: i, text: lines[i].text, rom: r, trans: displayMode == "orig" ? "" : t)
+                })
                 return
             }
             func text(_ i: Int) -> String { lines[i].text.isEmpty ? "♪" : lines[i].text }

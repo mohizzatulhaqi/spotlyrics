@@ -1,6 +1,6 @@
 import Foundation
 
-struct Line: Codable { let time: Double; let text: String }
+struct Line: Codable, Equatable { let time: Double; let text: String }
 
 struct Snap {
     let title: String, artist: String, album: String
@@ -31,4 +31,15 @@ extension Snap {
     var isAd: Bool { PlayerReading.isAd(title: title, artist: artist, adURL: adURL) }
 }
 
-struct CachedLyrics: Codable { let saved: Date; let lines: [Line] }
+struct LyricsResult: Equatable {
+    var lines: [Line]
+    var synced: Bool
+    static let empty = LyricsResult(lines: [], synced: true)
+}
+
+struct CachedLyrics: Codable {
+    let saved: Date
+    let lines: [Line]
+    let synced: Bool?
+    var isSynced: Bool { synced ?? true }
+}

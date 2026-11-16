@@ -7,8 +7,13 @@ extension AppDelegate {
             if quizWindow == nil {
                 let m = QuizModel()
                 m.onPlay = { [weak self] i in
-                    guard let s = self, i < s.lines.count else { return }
+                    guard let s = self, s.lyricsSynced, i < s.lines.count else { return }
                     s.seek(Playback.rawPosition(forLineTime: s.lines[i].time, offset: s.offset))
+                }
+                m.onSpeak = { [weak self] i in
+                    guard let s = self, i < s.lines.count else { return }
+                    let line = s.lines[i].text
+                    s.learn.speaker.speak(s.learn.prep(line), language: s.langForLine(line))
                 }
                 let hc = NSHostingController(rootView: QuizView(m: m))
                 hc.sizingOptions = []
@@ -30,6 +35,7 @@ extension AppDelegate {
     }
 
     func clearStudyState() {
+        learn.speaker.stop()
         loop = nil
         learn.clearLoopSilently()
         quizWindow?.close()

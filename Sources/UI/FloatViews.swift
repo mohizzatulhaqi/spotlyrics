@@ -1,6 +1,13 @@
 import Cocoa
 import SwiftUI
 
+struct PlainLine: Identifiable, Equatable {
+    let id: Int
+    let text: String
+    let rom: String
+    let trans: String
+}
+
 @MainActor
 final class FloatModel: ObservableObject {
     @Published var prev = ""
@@ -10,10 +17,16 @@ final class FloatModel: ObservableObject {
     @Published var next = ""
     @Published var artwork: NSImage?
     @Published var accent: Color?
+    @Published var plain: [PlainLine] = []
     var onClose: () -> Void = {}
 
     func set(prev: String, cur: String, sub: String, next: String, rom: String = "") {
         self.prev = prev; self.cur = cur; self.sub = sub; self.next = next; self.rom = rom
+        plain = []
+    }
+
+    func setPlain(_ lines: [PlainLine]) {
+        plain = lines
     }
 }
 
@@ -34,8 +47,38 @@ struct FloatView: View {
         }
     }
 
+    var plainView: some View {
+        ScrollView {
+            VStack(spacing: 6) {
+                ForEach(m.plain) { l in
+                    if l.text.isEmpty {
+                        Spacer().frame(height: 10)
+                    } else {
+                        VStack(spacing: 2) {
+                            Text(l.text).font(.system(size: 18, weight: .semibold)).foregroundStyle(.white)
+                            if !l.rom.isEmpty {
+                                Text(l.rom).font(.system(size: 13).italic()).foregroundStyle(.white.opacity(0.6))
+                            }
+                            if !l.trans.isEmpty {
+                                Text(l.trans).font(.system(size: 14, weight: .medium))
+                                    .foregroundStyle(m.accent ?? Color(red: 0.6, green: 0.95, blue: 0.8))
+                            }
+                        }
+                        .multilineTextAlignment(.center)
+                    }
+                }
+            }
+            .padding(.horizontal, 30)
+            .padding(.vertical, 24)
+            .frame(maxWidth: .infinity)
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .topTrailing) {
+            if !m.plain.isEmpty {
+                plainView
+            } else {
             VStack(spacing: 8) {
                 Spacer(minLength: 0)
                 Text(m.prev).font(.system(size: 14, weight: .medium))
@@ -66,6 +109,7 @@ struct FloatView: View {
             .padding(.horizontal, 30)
             .padding(.vertical, 16)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
             Button { m.onClose() } label: {
                 Image(systemName: "xmark.circle.fill").font(.system(size: 16)).foregroundStyle(.white.opacity(0.7))
             }

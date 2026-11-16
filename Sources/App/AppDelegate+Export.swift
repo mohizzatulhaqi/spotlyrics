@@ -6,12 +6,12 @@ extension AppDelegate {
         let it = NSMenuItem(title: L(.copyExportMenu), action: nil, keyEquivalent: "")
         it.image = NSImage(systemSymbolName: "doc.on.doc", accessibilityDescription: nil)
         let sub = NSMenu()
-        let entries: [(String, Selector)] = [
+        var entries: [(String, Selector)] = [
             (L(.copyLine), #selector(copyCurrentLineAction)),
-            (L(.copyAll), #selector(copyAllLyrics)),
-            (L(.exportSRT), #selector(exportSRT)),
-            (L(.exportText), #selector(exportText))
+            (L(.copyAll), #selector(copyAllLyrics))
         ]
+        if lyricsSynced { entries.append((L(.exportSRT), #selector(exportSRT))) }
+        entries.append((L(.exportText), #selector(exportText)))
         for (title, sel) in entries {
             let m = NSMenuItem(title: title, action: sel, keyEquivalent: "")
             m.target = self
