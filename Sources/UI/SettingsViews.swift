@@ -27,6 +27,9 @@ final class SettingsModel: ObservableObject {
     @Published var hotKeysOn = true {
         didSet { if !syncing { onHotKeys(hotKeysOn) } }
     }
+    @Published var player = Prefs.playerChoice {
+        didSet { if !syncing { Prefs.playerChoice = player; onPlayer() } }
+    }
     @Published var appLang = Prefs.appLanguage {
         didSet { if !syncing { Prefs.appLanguage = appLang; langTick += 1; onLanguage() } }
     }
@@ -39,6 +42,7 @@ final class SettingsModel: ObservableObject {
     @Published var recordMessage = ""
     private var syncing = false
     var onTab: (String) -> Void = { _ in }
+    var onPlayer: () -> Void = {}
     var onRecord: (Int) -> Void = { _ in }
     var onResetShortcut: (Int) -> Void = { _ in }
     var onResetAllShortcuts: () -> Void = {}
@@ -80,6 +84,7 @@ final class SettingsModel: ObservableObject {
     func sync(floatOn f: Bool, login l: Bool, loginAvailable a: Bool, loginNote n: String, hotKeysOn h: Bool, shortcuts rows: [ShortcutRow]) {
         syncing = true
         appLang = Prefs.appLanguage
+        player = Prefs.playerChoice
         casual = Prefs.casual
         romaji = Prefs.showRomaji
         accent = Prefs.coverAccent
@@ -117,6 +122,11 @@ struct SettingsView: View {
                     Text(L(.appLangSystem)).tag("system")
                     Text("Indonesia").tag("id")
                     Text("English").tag("en")
+                }
+                Picker(L(.playerLabel), selection: $s.player) {
+                    Text(L(.playerAuto)).tag("auto")
+                    Text(L(.playerSpotify)).tag("spotify")
+                    Text(L(.playerMusic)).tag("music")
                 }
                 Toggle(L(.loginToggle), isOn: $s.login).disabled(!s.loginAvailable)
                 if !s.loginNote.isEmpty {

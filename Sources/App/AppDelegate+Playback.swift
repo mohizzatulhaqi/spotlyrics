@@ -8,9 +8,13 @@ import NaturalLanguage
 extension AppDelegate {
     func loadLyrics(title: String, artist: String, album: String, duration: Int, key: String, refresh: Bool) {
         Task {
-            let l = await Lyrics.load(title: title, artist: artist, album: album, duration: duration, refresh: refresh)
+            let r = await Lyrics.load(title: title, artist: artist, album: album, duration: duration, refresh: refresh)
             DispatchQueue.main.async {
-                if self.trackKey == key { self.lines = l; self.loaded = true }
+                if self.trackKey == key {
+                    self.lines = r.lines
+                    self.lyricsSynced = r.synced
+                    self.loaded = true
+                }
             }
         }
     }
@@ -27,7 +31,7 @@ extension AppDelegate {
         loadLyrics(title: curTitle, artist: curArtist, album: curAlbum, duration: curDurSec, key: key, refresh: true)
     }
 
-    @objc func spotifyChanged(_ n: Notification) {
+    @objc func playerChanged(_ n: Notification) {
         notificationCount += 1
         tracker.notify()
         runTick()
@@ -48,7 +52,7 @@ extension AppDelegate {
 
     func control(_ k: String) {
         let cmd: PlayerCommand = k == "prev" ? .previous : k == "next" ? .next : .playPause
-        player.send(cmd)
+        router.send(cmd)
         if k == "toggle" {
             lastPlaying.toggle()
             MainActor.assumeIsolated { menuModel?.playing = lastPlaying }
@@ -75,6 +79,7 @@ extension AppDelegate {
                 mm.lyricTrans = ""
                 return
             }
+            if !lyricsSynced { mm.lyric = L(.lyricsNotSynced); mm.lyricTrans = ""; return }
             guard let i = lastIdx else { mm.lyric = "♪"; mm.lyricTrans = ""; return }
             let t = lines[i].text
             mm.lyric = t.isEmpty ? "♪" : t
@@ -84,7 +89,7 @@ extension AppDelegate {
 
     func seek(_ sec: Double, refresh: Bool = true) {
         let ms = max(0, Int(sec * 1000))
-        player.seek(toMs: ms)
+        router.seek(toMs: ms)
         tracker.didSeek(toMs: ms, now: Date())
         lastPosMs = ms
         floatSig = ""
@@ -176,7 +181,11 @@ extension AppDelegate {
         tickCount += 1
         if tickCount % 10 == 0 { refreshDevice() }
 
-        tickRunning = player.isRunning
+        if router.reevaluate(now: Date(), activePlaying: lastPlaying) {
+            tracker.reset()
+            lastPlaying = false
+        }
+        tickRunning = router.isRunning
         guard tickRunning else {
             tracker.reset()
             clearCoverIfShown()
@@ -245,6 +254,7 @@ extension AppDelegate {
         if key != trackKey {
             trackKey = key
             lines = []
+            lyricsSynced = true
             loaded = false
             clearStudyState()
             resetTranslation()
@@ -256,6 +266,8 @@ extension AppDelegate {
                         if self.trackKey == key { self.setArtwork(img) }
                     }
                 }
+            } else if let data = router.artworkData(), let img = NSImage(data: data) {
+                setArtwork(img)
             }
             loadLyrics(title: title, artist: artist, album: album, duration: durMs / 1000, key: key, refresh: false)
         }
@@ -266,7 +278,7 @@ extension AppDelegate {
             seek(Playback.rawPosition(forLineTime: r.startTime, offset: offset), refresh: false)
         }
         var idx: Int?
-        for (n, l) in lines.enumerated() { if l.time <= pos { idx = n } else { break } }
+        if lyricsSynced { for (n, l) in lines.enumerated() { if l.time <= pos { idx = n } else { break } } }
 
         lastIdx = idx
         if menuOpen { pushLyric() }
@@ -286,7 +298,7 @@ extension AppDelegate {
             let lk = trackKey + "#\(lines.count)#\(trans.count)#\(romaji.count)#\(showRm)#\(transKey == trackKey)"
             if lk != learnKey {
                 learnKey = lk
-                learn.setLyrics(lines.map { $0.text }, title: "\(artist) - \(title)", translations: tr, times: lines.map { $0.time })
+                learn.setLyrics(lines.map { $0.text }, title: "\(artist) - \(title)", translations: tr, times: lyricsSynced ? lines.map { $0.time } : [])
             }
             learn.setCurrent(idx ?? -1)
         }
@@ -294,7 +306,7 @@ extension AppDelegate {
         if Date() < flashUntil { setTitle(flashText); return }
         if hidden { return }
         let prefix = state == "playing" ? "" : "⏸ "
-        if lines.isEmpty {
+        if lines.isEmpty || !lyricsSynced {
             setTitle(prefix + (loaded ? "♪ \(title)" : "♪ …"))
             return
         }

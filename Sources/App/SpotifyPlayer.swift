@@ -1,6 +1,7 @@
 import Cocoa
 
 final class SpotifyPlayer: PlayerSource {
+    let id = PlayerID.spotify
     static let bundleID = "com.spotify.client"
 
     private let stateScript = NSAppleScript(source: """

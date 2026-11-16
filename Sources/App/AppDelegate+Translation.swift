@@ -54,6 +54,7 @@ extension AppDelegate {
                 sm.onLogin = { [weak self] on in self?.setLogin(on) }
                 sm.onHotKeys = { [weak self] on in self?.setHotKeys(on) }
                 sm.onTab = { [weak self] t in self?.resizeSettings(t) }
+                sm.onPlayer = { [weak self] in self?.playerChoiceChanged() }
                 sm.onCopyDiagnostics = { [weak self] in self?.copyDiagnostics() }
                 sm.onRevealData = { [weak self] in self?.revealDataFolder() }
                 sm.onRecord = { [weak self] id in self?.startRecordingShortcut(id) }

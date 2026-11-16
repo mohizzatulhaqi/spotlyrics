@@ -28,6 +28,12 @@ extension AppDelegate {
         NSApp.mainMenu = main
     }
 
+    func playerChoiceChanged() {
+        router.reevaluate(now: Date(), activePlaying: false)
+        tracker.reset()
+        runTick()
+    }
+
     func warnAutomation() {
         guard !shownAutomationAlert else { return }
         shownAutomationAlert = true

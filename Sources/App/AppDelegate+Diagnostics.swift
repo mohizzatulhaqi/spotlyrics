@@ -47,8 +47,11 @@ extension AppDelegate {
                 ("Floating lyrics", floatOn ? "on" : "off"),
                 ("Global shortcuts", hotKeysOn ? "on (\(hotFailedCount) unavailable)" : "off")
             ]),
-            ("Spotify", [
-                ("Running", NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").first != nil ? "yes" : "no"),
+            ("Player", [
+                ("Setting", Prefs.playerChoice),
+                ("Active player", router.activeID.displayName),
+                ("Spotify running", router.spotify.isRunning ? "yes" : "no"),
+                ("Apple Music running", router.music.isRunning ? "yes" : "no"),
                 ("Automation permission", automationState().label),
                 ("Player state", tracker.snap?.state ?? "none"),
                 ("Last data fetch", age),

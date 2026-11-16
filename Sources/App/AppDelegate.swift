@@ -73,10 +73,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var marqueeStart = Date()
     var marqueeFixed = false
 
-    let player = SpotifyPlayer()
-    lazy var tracker = PlaybackTracker(source: player)
+    let router = RoutingPlayer()
+    lazy var tracker = PlaybackTracker(source: router)
     var tickTimer: Timer?
     var tickRunning = false
+    var lyricsSynced = true
     var setupWindow: NSWindow?
     var setupModel: SetupModel?
     var setupTimer: Timer?
@@ -160,7 +161,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         }
         learn.onLoop = { [weak self] a, b in
             guard let s = self else { return }
-            if let a = a, let b = b,
+            if let a = a, let b = b, s.lyricsSynced,
                let r = LoopRange.make(lines: s.lines, a: a, b: b, duration: Double(s.lastDurMs) / 1000) {
                 s.loop = r
                 s.seek(Playback.rawPosition(forLineTime: r.startTime, offset: s.offset))
@@ -178,16 +179,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
             workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] n in
                 let app = n.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
-                if app?.bundleIdentifier == SpotifyPlayer.bundleID {
+                if let b = app?.bundleIdentifier, PlayerID.allCases.contains(where: { $0.bundleID == b }) {
                     self?.tracker.notify()
                     self?.runTick()
                 }
             }
         }
-        DistributedNotificationCenter.default().addObserver(
-            self, selector: #selector(spotifyChanged),
-            name: NSNotification.Name("com.spotify.client.PlaybackStateChanged"), object: nil,
-            suspensionBehavior: .deliverImmediately)
+        for name in ["com.spotify.client.PlaybackStateChanged", "com.apple.Music.playerInfo", "com.apple.iTunes.playerInfo"] {
+            DistributedNotificationCenter.default().addObserver(
+                self, selector: #selector(playerChanged),
+                name: NSNotification.Name(name), object: nil,
+                suspensionBehavior: .deliverImmediately)
+        }
         let m = Timer(timeInterval: Marquee.step, repeats: true) { [weak self] _ in
             guard let s = self, s.marqueeText.count > s.maxChars else { return }
             s.renderTitle()

@@ -3,9 +3,10 @@ import SwiftUI
 import Carbon.HIToolbox
 
 extension AppDelegate {
-    func automationState(prompt: Bool = false) -> AutomationState {
-        guard player.isRunning else { return .appNotRunning }
-        let target = NSAppleEventDescriptor(bundleIdentifier: SpotifyPlayer.bundleID)
+    func automationState(for id: PlayerID? = nil, prompt: Bool = false) -> AutomationState {
+        let pid = id ?? router.activeID
+        guard router.source(pid).isRunning else { return .appNotRunning }
+        let target = NSAppleEventDescriptor(bundleIdentifier: pid.bundleID)
         guard let desc = target.aeDesc else { return .unknown(0) }
         return AutomationState(osStatus: Int(AEDeterminePermissionToAutomateTarget(desc, typeWildCard, typeWildCard, prompt)))
     }
@@ -24,7 +25,7 @@ extension AppDelegate {
             if setupWindow == nil {
                 let m = SetupModel()
                 m.onOpenSpotify = {
-                    if let u = NSWorkspace.shared.urlForApplication(withBundleIdentifier: SpotifyPlayer.bundleID) {
+                    if let u = NSWorkspace.shared.urlForApplication(withBundleIdentifier: PlayerID.spotify.bundleID) {
                         NSWorkspace.shared.openApplication(at: u, configuration: NSWorkspace.OpenConfiguration())
                     }
                 }
@@ -62,11 +63,12 @@ extension AppDelegate {
 
     func refreshSetup() {
         guard setupWindow != nil else { return }
-        let running = player.isRunning
-        let auto = automationState()
+        let running = router.anyRunning
+        let auto = automationState(for: router.anyRunning ? (router.active.isRunning ? router.activeID : (router.spotify.isRunning ? .spotify : .music)) : nil)
         let ls = loginState()
         MainActor.assumeIsolated {
-            setupModel?.sync(spotify: running, automation: auto, login: ls.on, loginAvailable: ls.available)
+            setupModel?.sync(spotify: running, automation: auto, login: ls.on, loginAvailable: ls.available,
+                             playerName: (router.active.isRunning ? router.activeID : (router.spotify.isRunning ? .spotify : .music)).displayName)
         }
     }
 

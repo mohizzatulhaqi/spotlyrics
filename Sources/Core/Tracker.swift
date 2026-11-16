@@ -4,11 +4,52 @@ enum PlayerCommand {
     case previous, playPause, next
 }
 
+enum PlayerID: String, CaseIterable {
+    case spotify, music
+
+    var displayName: String { self == .spotify ? "Spotify" : "Apple Music" }
+    var bundleID: String { self == .spotify ? "com.spotify.client" : "com.apple.Music" }
+}
+
 protocol PlayerSource: AnyObject {
+    var id: PlayerID { get }
     var isRunning: Bool { get }
     func fetch() -> PlayerReading?
     func send(_ command: PlayerCommand)
     func seek(toMs ms: Int)
+    func artworkData() -> Data?
+}
+
+extension PlayerSource {
+    func artworkData() -> Data? { nil }
+}
+
+enum PlayerChoice {
+    static func pick(setting: String, current: PlayerID, running: [PlayerID: Bool], playing: [PlayerID: Bool]) -> PlayerID {
+        if let forced = PlayerID(rawValue: setting) { return forced }
+        let up = PlayerID.allCases.filter { running[$0] == true }
+        if up.isEmpty { return current }
+        if up.count == 1 { return up[0] }
+        if playing[current] == true { return current }
+        if let other = up.first(where: { $0 != current && playing[$0] == true }) { return other }
+        return up.contains(current) ? current : up[0]
+    }
+}
+
+enum ImageData {
+    static let signatures: [[UInt8]] = [
+        [0x89, 0x50, 0x4E, 0x47], [0xFF, 0xD8, 0xFF], [0x49, 0x49, 0x2A, 0x00], [0x4D, 0x4D, 0x00, 0x2A], [0x47, 0x49, 0x46, 0x38]
+    ]
+
+    static func trimmed(_ d: Data) -> Data {
+        let bytes = [UInt8](d.prefix(600))
+        for i in 0..<bytes.count {
+            for sig in signatures where i + sig.count <= bytes.count && Array(bytes[i..<(i + sig.count)]) == sig {
+                return Data(d.dropFirst(i))
+            }
+        }
+        return d
+    }
 }
 
 final class PlaybackTracker {

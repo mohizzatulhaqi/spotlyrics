@@ -12,6 +12,7 @@ final class SetupModel: ObservableObject {
         didSet { if !syncing { onLogin(login) } }
     }
     @Published var loginAvailable = true
+    @Published var playerName = "Spotify"
     @Published var langTick = 0
     private var syncing = false
     var onOpenSpotify: () -> Void = {}
@@ -22,8 +23,9 @@ final class SetupModel: ObservableObject {
     var onTarget: () -> Void = {}
     var onLogin: (Bool) -> Void = { _ in }
 
-    func sync(spotify: Bool, automation a: AutomationState, login l: Bool, loginAvailable av: Bool) {
+    func sync(spotify: Bool, automation a: AutomationState, login l: Bool, loginAvailable av: Bool, playerName name: String) {
         syncing = true
+        playerName = name
         spotifyRunning = spotify
         automation = a
         login = l
@@ -79,7 +81,7 @@ struct SetupView: View {
             }
             Divider()
             SetupRow(ok: m.spotifyRunning, title: L(.setupSpotify),
-                     detail: m.spotifyRunning ? L(.setupSpotifyOk) : L(.setupSpotifyNo)) {
+                     detail: m.spotifyRunning ? L(.setupSpotifyOk, m.playerName) : L(.setupSpotifyNo)) {
                 if !m.spotifyRunning { Button(L(.setupOpenSpotify)) { m.onOpenSpotify() } }
             }
             SetupRow(ok: m.automation == .granted, title: L(.setupAutomation), detail: autoDetail) {

@@ -72,6 +72,11 @@ enum Prefs {
         get { UserDefaults.standard.object(forKey: "menuBarCover") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "menuBarCover") }
     }
+    static var playerChoice: String {
+        get { UserDefaults.standard.string(forKey: "playerChoice") ?? "auto" }
+        set { UserDefaults.standard.set(newValue, forKey: "playerChoice") }
+    }
+
     static var setupDone: Bool {
         get { UserDefaults.standard.bool(forKey: "setupDone") }
         set { UserDefaults.standard.set(newValue, forKey: "setupDone") }
