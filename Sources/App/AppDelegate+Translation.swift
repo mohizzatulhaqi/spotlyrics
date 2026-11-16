@@ -47,6 +47,7 @@ extension AppDelegate {
                 let sm = SettingsModel()
                 sm.onCasual = { [weak self] in self?.casualChanged() }
                 sm.onRomaji = { [weak self] in self?.romajiChanged() }
+                sm.onReadingStyle = { [weak self] in self?.readingStyleChanged() }
                 sm.onAccent = { [weak self] in self?.accentChanged() }
                 sm.onMenuCover = { [weak self] in
                     guard let s = self else { return }
@@ -241,6 +242,14 @@ extension AppDelegate {
         learnKey = ""
     }
 
+    func readingStyleChanged() {
+        let style = Prefs.readingStyle
+        romaji = zip(lines.map { $0.text }, lineLangs).map { Readings.reading($0, lang: $1, style: style) }
+        floatSig = ""
+        learnKey = ""
+        syncMenuFlags()
+    }
+
     func romajiChanged() {
         floatSig = ""
         learnKey = ""
@@ -276,7 +285,7 @@ extension AppDelegate {
         let work = ov.map { o in rom == nil ? texts : texts.map { Romaji.convert($0, o) } } ?? texts
         let langs = Detect.perLine(texts, override: rom ?? ov)
         lineLangs = langs
-        romaji = zip(texts, langs).map { Readings.romanize($0, lang: $1) }
+        romaji = zip(texts, langs).map { Readings.reading($0, lang: $1, style: Prefs.readingStyle) }
         if !langs.contains(where: { !$0.isEmpty && !Lang.same($0, target) }) {
             trans = Array(repeating: "", count: texts.count)
             return

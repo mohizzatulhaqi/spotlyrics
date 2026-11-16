@@ -15,6 +15,9 @@ final class SettingsModel: ObservableObject {
     @Published var menuCover = Prefs.menuBarCover {
         didSet { if !syncing { Prefs.menuBarCover = menuCover; onMenuCover() } }
     }
+    @Published var readingStyle = Prefs.readingStyle {
+        didSet { if !syncing { Prefs.readingStyle = readingStyle; onReadingStyle() } }
+    }
     @Published var accent = Prefs.coverAccent {
         didSet { if !syncing { Prefs.coverAccent = accent; onAccent() } }
     }
@@ -66,6 +69,7 @@ final class SettingsModel: ObservableObject {
     var onCasual: () -> Void = {}
     var onRomaji: () -> Void = {}
     var onAccent: () -> Void = {}
+    var onReadingStyle: () -> Void = {}
     var onMenuCover: () -> Void = {}
     var onFloat: (Bool) -> Void = { _ in }
     var onLogin: (Bool) -> Void = { _ in }
@@ -76,7 +80,7 @@ final class SettingsModel: ObservableObject {
         case "terjemahan": return 720
         case "pintasan": return 480
         case "tentang": return 340
-        case "tampilan": return 300
+        case "tampilan": return 400
         default: return 300
         }
     }
@@ -88,6 +92,7 @@ final class SettingsModel: ObservableObject {
         casual = Prefs.casual
         romaji = Prefs.showRomaji
         accent = Prefs.coverAccent
+        readingStyle = Prefs.readingStyle
         menuCover = Prefs.menuBarCover
         floatOn = f
         login = l
@@ -163,6 +168,11 @@ struct SettingsView: View {
                 Toggle(L(.romajiToggle), isOn: $s.romaji)
                 Text(L(.romajiNote))
                     .font(.caption).foregroundStyle(.secondary)
+                Picker(L(.readingStyleLabel), selection: $s.readingStyle) {
+                    Text(L(.readingRomaji)).tag("romaji")
+                    Text(L(.readingFurigana)).tag("furigana")
+                }
+                Text(L(.readingStyleNote)).font(.caption).foregroundStyle(.secondary)
                 Toggle(L(.accentToggle), isOn: $s.accent)
                 Toggle(L(.menuBarCoverToggle), isOn: $s.menuCover)
             }

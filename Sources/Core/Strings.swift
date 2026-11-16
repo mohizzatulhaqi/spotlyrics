@@ -21,7 +21,7 @@ enum S: String, CaseIterable {
     case installed, download, unsupported, hintLimited, hintFixed, hintAuto
     case translateTo, lyricsLanguage, srcAuto, srcLimited, srcFixed, searchLanguage
     case downloadChecked, onDeviceNote, failedWith
-    case learnWindow, learnWindowSong, learnHint, btnTranslate, btnSaveWord, btnExportAnki, vocabCount
+    case learnWindow, learnWindowSong, learnHint, btnTranslate, btnSaveWord, btnExport, vocabCount
     case lineSelected, lookingUp, dictEnglish, meaningNotFoundWith, meaningNotFound
     case translationFailedNote, translatingLine, lineNoNeed, exportNone, exportDone
     case langJaRom, langKoRom, audioOutput
@@ -34,7 +34,9 @@ enum S: String, CaseIterable {
     case copyExportMenu, copyLine, copyAll, exportSRT, exportText, copiedLine, copiedAll, exportDoneMsg, exportFailed
     case hkCopy, menuBarCoverToggle, lyricsNotSynced
     case btnSpeak, noVoice, quizSpeak
+    case exportApkgItem, exportTsvItem, exportCsvItem, apkgWorking, apkgProgress, apkgDone, apkgNoVoice, exportFileDone
     case playerLabel, playerAuto, playerSpotify, playerMusic, podcastNoLyrics
+    case readingStyleLabel, readingRomaji, readingFurigana, readingStyleNote
     case pickMenu, pickTitle, pickLoading, pickNone, pickOffline, pickSynced, pickPlain, pickNative, pickInUse, pickPreview, pickUse, pickAuto
     case pressKeys, recordNeedMod, recordConflict, resetShortcut, resetAllShortcuts, recordHint
     case setupTitle, setupSubtitle, setupSpotify, setupSpotifyOk, setupSpotifyNo, setupOpenSpotify
@@ -142,8 +144,8 @@ extension L10n {
         .appLangSystem: "Ikuti sistem",
         .casualToggle: "Gaya santai (bahasa sehari-hari)",
         .casualNote: "Merapikan hasil terjemahan ke Indonesia dan Inggris agar tidak terlalu baku.",
-        .romajiToggle: "Tampilkan cara baca (romaji)",
-        .romajiNote: "Hanya muncul untuk lagu berbahasa Jepang atau Korea.",
+        .romajiToggle: "Tampilkan cara baca",
+        .romajiNote: "Untuk lagu Jepang, Korea, Mandarin (pinyin), Rusia, Ukraina, Yunani, dan Hindi.",
         .accentToggle: "Warna aksen sesuai cover album",
         .hotkeysToggle: "Aktifkan pintasan global",
         .loginFailed: "Gagal mengatur mulai saat login",
@@ -180,7 +182,7 @@ extension L10n {
         .learnHint: "Klik kata di lirik untuk lihat arti. Klik baris lalu \"Terjemahkan\" untuk terjemahan baris itu. Klik dua kali pada baris untuk loncat ke detik itu di lagu.",
         .btnTranslate: "Terjemahkan",
         .btnSaveWord: "Simpan kata",
-        .btnExportAnki: "Ekspor Anki",
+        .btnExport: "Ekspor",
         .vocabCount: "Kosakata tersimpan: %d",
         .lineSelected: "Baris dipilih. Klik \"Terjemahkan\" untuk terjemahan baris itu.",
         .lookingUp: "Mencari arti \"%@\"...",
@@ -238,10 +240,22 @@ extension L10n {
         .hkCopy: "Salin baris aktif",
         .menuBarCoverToggle: "Tampilkan cover album di menu bar",
         .lyricsNotSynced: "Lirik tersedia tetapi tidak tersinkron",
+        .exportApkgItem: "Paket Anki dengan suara (.apkg)",
+        .exportTsvItem: "Teks Anki (.tsv)",
+        .exportCsvItem: "CSV (.csv)",
+        .apkgWorking: "Membuat paket Anki dan audio…",
+        .apkgProgress: "Membuat audio %d/%d…",
+        .apkgDone: "Diekspor ke Downloads: %@ (%d kartu, %d berkas audio)\n\nDi Anki: File > Import, pilih file ini.",
+        .apkgNoVoice: "%d kata dilewati audionya karena bahasanya tidak punya suara terpasang.",
+        .exportFileDone: "Diekspor ke Downloads: %@",
         .btnSpeak: "Ucapkan",
         .noVoice: "Suara untuk %@ belum terpasang. Tambahkan di System Settings > Accessibility > Spoken Content > System Voice.",
         .quizSpeak: "Ucapkan baris",
         .podcastNoLyrics: "Podcast: tidak ada lirik",
+        .readingStyleLabel: "Bacaan lirik Jepang",
+        .readingRomaji: "Romaji",
+        .readingFurigana: "Furigana (hiragana)",
+        .readingStyleNote: "Furigana tampil di atas kanji di jendela melayang, dan sebagai baris hiragana di tempat lain.",
         .pickMenu: "Pilih versi lirik…",
         .pickTitle: "Pilih versi lirik",
         .pickLoading: "Mencari versi di LRCLIB…",
@@ -353,8 +367,8 @@ extension L10n {
         .appLangSystem: "Follow system",
         .casualToggle: "Casual style (everyday language)",
         .casualNote: "Smooths translations into Indonesian and English so they sound less formal.",
-        .romajiToggle: "Show readings (romaji)",
-        .romajiNote: "Only shown for Japanese or Korean songs.",
+        .romajiToggle: "Show readings",
+        .romajiNote: "For Japanese, Korean, Mandarin (pinyin), Russian, Ukrainian, Greek, and Hindi songs.",
         .accentToggle: "Accent color from the album cover",
         .hotkeysToggle: "Enable global shortcuts",
         .loginFailed: "Couldn't change launch at login",
@@ -391,7 +405,7 @@ extension L10n {
         .learnHint: "Click a word in the lyrics to see its meaning. Click a line, then \"Translate\", to translate that line. Double-click a line to jump to that moment in the song.",
         .btnTranslate: "Translate",
         .btnSaveWord: "Save word",
-        .btnExportAnki: "Export to Anki",
+        .btnExport: "Export",
         .vocabCount: "Saved words: %d",
         .lineSelected: "Line selected. Click \"Translate\" to translate it.",
         .lookingUp: "Looking up \"%@\"...",
@@ -449,10 +463,22 @@ extension L10n {
         .hkCopy: "Copy current line",
         .menuBarCoverToggle: "Show the album cover in the menu bar",
         .lyricsNotSynced: "Lyrics are available but not synced",
+        .exportApkgItem: "Anki package with audio (.apkg)",
+        .exportTsvItem: "Anki text (.tsv)",
+        .exportCsvItem: "CSV (.csv)",
+        .apkgWorking: "Building the Anki package and audio…",
+        .apkgProgress: "Creating audio %d/%d…",
+        .apkgDone: "Exported to Downloads: %@ (%d cards, %d audio files)\n\nIn Anki: File > Import, choose this file.",
+        .apkgNoVoice: "%d words have no audio because their language has no installed voice.",
+        .exportFileDone: "Exported to Downloads: %@",
         .btnSpeak: "Speak",
         .noVoice: "No voice for %@ is installed. Add one in System Settings > Accessibility > Spoken Content > System Voice.",
         .quizSpeak: "Speak line",
         .podcastNoLyrics: "Podcast: no lyrics",
+        .readingStyleLabel: "Japanese lyrics readings",
+        .readingRomaji: "Romaji",
+        .readingFurigana: "Furigana (hiragana)",
+        .readingStyleNote: "Furigana appears above the kanji in the floating window, and as a hiragana line elsewhere.",
         .pickMenu: "Choose lyrics version…",
         .pickTitle: "Choose lyrics version",
         .pickLoading: "Looking for versions on LRCLIB…",
