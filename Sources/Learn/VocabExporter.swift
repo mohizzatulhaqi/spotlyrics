@@ -57,11 +57,42 @@ enum VocabExporter {
                 if made[w] != nil { wa = w }
                 if !e.line.isEmpty, made[l] != nil { la = l }
             }
-            notes.append(AnkiNote(word: e.word, meaning: e.meaning, line: e.line, song: e.song, wordAudio: wa, lineAudio: la))
+            notes.append(AnkiNote(word: e.word, meaning: e.meaning, line: e.line, song: e.song, wordAudio: wa, lineAudio: la,
+                                  reading: e.reading ?? "", lineReading: e.lineReading ?? "", lineTranslation: e.lineTranslation ?? "",
+                                  tags: AnkiPackage.tags(song: e.song, lang: language(for: e)), reverse: Prefs.ankiReverse))
         }
         let media = made.keys.sorted().compactMap { n in made[n].map { AnkiMedia(name: n, url: $0) } }
         let out = Vocab.downloads("SpotLyrics-vocab.apkg")
         try AnkiPackage.write(notes: notes, media: media, to: out)
         return Result(url: out, cards: notes.count, audio: media.count, missingVoice: missing)
+    }
+}
+
+enum VocabExportKind {
+    case apkg, tsv, csv
+}
+
+enum VocabExportRunner {
+    static func run(_ kind: VocabExportKind, entries: [VocabEntry], progress: @escaping (String) -> Void) async -> (message: String, url: URL?) {
+        guard !entries.isEmpty else { return (L(.exportNone), nil) }
+        switch kind {
+        case .tsv:
+            guard let url = Vocab.exportAnki(entries) else { return (L(.exportFailed), nil) }
+            return (L(.exportFileDone, url.lastPathComponent), url)
+        case .csv:
+            guard let url = Vocab.exportCSV(entries) else { return (L(.exportFailed), nil) }
+            return (L(.exportFileDone, url.lastPathComponent), url)
+        case .apkg:
+            progress(L(.apkgWorking))
+            do {
+                let r = try await VocabExporter.exportApkg(entries: entries) { done, total in progress(L(.apkgProgress, done, total)) }
+                var msg = L(.apkgDone, r.url.lastPathComponent, r.cards, r.audio)
+                if r.missingVoice > 0 { msg += "\n\n" + L(.apkgNoVoice, r.missingVoice) }
+                return (msg, r.url)
+            } catch {
+                Diagnostics.log("apkg export failed: \(error)")
+                return (L(.exportFailed), nil)
+            }
+        }
     }
 }

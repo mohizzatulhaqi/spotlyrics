@@ -89,6 +89,7 @@ extension AppDelegate {
     func languageChanged() {
         L10n.refresh()
         learnItem.title = L(.learnMode)
+        vocabItem.title = L(.vocabMenu)
         songItem.title = L(.thisSong)
         settingsItem.title = L(.settingsMenu)
         reloadItem.title = L(.reloadLyrics)
@@ -96,6 +97,7 @@ extension AppDelegate {
         settingsWindow?.title = L(.settingsTitle)
         quizWindow?.title = L(.quizTitle)
         versionWindow?.title = L(.pickTitle)
+        vocabWindow?.title = L(.vocabTitle)
         setupWindow?.title = L(.setupTitle)
         learn.relocalize()
         floatSig = ""
@@ -104,6 +106,7 @@ extension AppDelegate {
             menuModel?.langTick += 1
             quizModel?.langTick += 1
             versionModel?.langTick += 1
+            vocabModel?.langTick += 1
             setupModel?.langTick += 1
             langModel?.langTick += 1
         }
