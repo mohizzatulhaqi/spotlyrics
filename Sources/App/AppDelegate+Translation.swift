@@ -46,12 +46,20 @@ extension AppDelegate {
                 sm.onCasual = { [weak self] in self?.casualChanged() }
                 sm.onRomaji = { [weak self] in self?.romajiChanged() }
                 sm.onAccent = { [weak self] in self?.accentChanged() }
+                sm.onMenuCover = { [weak self] in
+                    guard let s = self else { return }
+                    s.updateMenuBarCover(MainActor.assumeIsolated { s.menuModel?.artwork })
+                }
                 sm.onFloat = { [weak self] on in self?.setFloat(on); self?.syncMenuFlags() }
                 sm.onLogin = { [weak self] on in self?.setLogin(on) }
                 sm.onHotKeys = { [weak self] on in self?.setHotKeys(on) }
                 sm.onTab = { [weak self] t in self?.resizeSettings(t) }
                 sm.onCopyDiagnostics = { [weak self] in self?.copyDiagnostics() }
                 sm.onRevealData = { [weak self] in self?.revealDataFolder() }
+                sm.onRecord = { [weak self] id in self?.startRecordingShortcut(id) }
+                sm.onResetShortcut = { [weak self] id in self?.resetShortcut(id) }
+                sm.onResetAllShortcuts = { [weak self] in self?.resetAllShortcuts() }
+                sm.onOpenSetup = { [weak self] in self?.openSetup() }
                 sm.onLanguage = { [weak self] in self?.languageChanged() }
                 settingsModel = sm
                 let hc = NSHostingController(rootView: SettingsView(s: sm, lang: lm))
@@ -63,6 +71,9 @@ extension AppDelegate {
                 w.setContentSize(NSSize(width: 560, height: SettingsModel.height(for: sm.tab)))
                 settingsWindow = w
                 w.center()
+                NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: w, queue: .main) { [weak self] _ in
+                    self?.stopRecordingShortcut()
+                }
             }
             refreshSettings()
             if let t = tab { settingsModel?.tab = t }
@@ -79,16 +90,21 @@ extension AppDelegate {
         reloadItem.title = L(.reloadLyrics)
         quitItem.title = L(.quit)
         settingsWindow?.title = L(.settingsTitle)
+        quizWindow?.title = L(.quizTitle)
+        setupWindow?.title = L(.setupTitle)
         learn.relocalize()
         floatSig = ""
         learnKey = ""
         MainActor.assumeIsolated {
             menuModel?.langTick += 1
+            quizModel?.langTick += 1
+            setupModel?.langTick += 1
             langModel?.langTick += 1
         }
     }
 
     func resizeSettings(_ tab: String) {
+        stopRecordingShortcut()
         guard let w = settingsWindow else { return }
         let h = SettingsModel.height(for: tab)
         var f = w.frameRect(forContentRect: NSRect(x: 0, y: 0, width: 560, height: h))
@@ -101,7 +117,7 @@ extension AppDelegate {
         let ls = loginState()
         MainActor.assumeIsolated {
             settingsModel?.sync(floatOn: floatOn, login: ls.on, loginAvailable: ls.available, loginNote: ls.note,
-                                hotKeysOn: hotKeysOn, hotKeyLines: hotKeyLines())
+                                hotKeysOn: hotKeysOn, shortcuts: shortcutRows())
         }
     }
 
@@ -189,6 +205,7 @@ extension AppDelegate {
         }
         reloadItem.target = self
         songMenu.addItem(reloadItem)
+        if !lines.isEmpty { songMenu.addItem(copyExportItem()) }
     }
 
     func applyDisplayMode(_ m: String) {

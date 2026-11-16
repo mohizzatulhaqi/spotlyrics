@@ -84,6 +84,22 @@ extension AppDelegate {
             floatModel?.artwork = img
         }
         applyAccent(img)
+        updateMenuBarCover(img)
+    }
+
+    func clearCoverIfShown() {
+        if item.button?.image != nil { setArtwork(nil) }
+    }
+
+    func updateMenuBarCover(_ img: NSImage?) {
+        guard let b = item.button else { return }
+        if Prefs.menuBarCover, let img = img {
+            b.image = MenuBarCover.make(from: img)
+            b.imagePosition = .imageLeft
+        } else {
+            b.image = nil
+        }
+        updateStatusWidth()
     }
 
     func applyAccent(_ img: NSImage?) {
