@@ -11,11 +11,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     let learnItem = NSMenuItem(title: L(.learnMode), action: #selector(openLearn), keyEquivalent: "")
 
     let hotKeys = [
-        HotKeySpec(id: 1, code: UInt32(kVK_ANSI_L), symbol: "L", titleKey: .hkFloat),
-        HotKeySpec(id: 2, code: UInt32(kVK_ANSI_T), symbol: "T", titleKey: .hkMode),
-        HotKeySpec(id: 3, code: UInt32(kVK_ANSI_H), symbol: "H", titleKey: .hkHide),
-        HotKeySpec(id: 4, code: UInt32(kVK_ANSI_LeftBracket), symbol: "[", titleKey: .hkSlower),
-        HotKeySpec(id: 5, code: UInt32(kVK_ANSI_RightBracket), symbol: "]", titleKey: .hkFaster)
+        HotKeySpec(id: 1, defaultCode: UInt32(kVK_ANSI_L), titleKey: .hkFloat),
+        HotKeySpec(id: 2, defaultCode: UInt32(kVK_ANSI_T), titleKey: .hkMode),
+        HotKeySpec(id: 3, defaultCode: UInt32(kVK_ANSI_H), titleKey: .hkHide),
+        HotKeySpec(id: 4, defaultCode: UInt32(kVK_ANSI_LeftBracket), titleKey: .hkSlower),
+        HotKeySpec(id: 5, defaultCode: UInt32(kVK_ANSI_RightBracket), titleKey: .hkFaster),
+        HotKeySpec(id: 6, defaultCode: UInt32(kVK_ANSI_C), titleKey: .hkCopy)
     ]
     var hotRefs: [EventHotKeyRef] = []
     var hotFailed: Set<UInt32> = []
@@ -68,26 +69,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var offset = 0.0
     var tickCount = 0
     let maxChars = 40
-    var snap: Snap?
-    var needFetch = true
-    var lastFetch = Date.distantPast
-    var retryAt = Date.distantPast
     var marqueeText = ""
     var marqueeStart = Date()
     var marqueeFixed = false
 
-    let script = NSAppleScript(source: """
-    tell application "Spotify"
-        if player state is stopped then return {"", "", "", 0, 0, "stopped", "", ""}
-        set t to current track
-        return {name of t, artist of t, album of t, duration of t, (player position * 1000) as integer, (player state as text), artwork url of t, spotify url of t}
-    end tell
-    """)!
-    let ctlScripts: [String: NSAppleScript] = [
-        "prev": NSAppleScript(source: "tell application \"Spotify\" to previous track")!,
-        "toggle": NSAppleScript(source: "tell application \"Spotify\" to playpause")!,
-        "next": NSAppleScript(source: "tell application \"Spotify\" to next track")!
-    ]
+    let player = SpotifyPlayer()
+    lazy var tracker = PlaybackTracker(source: player)
+    var tickTimer: Timer?
+    var tickRunning = false
+    var setupWindow: NSWindow?
+    var setupModel: SetupModel?
+    var setupTimer: Timer?
+    var recordingId: Int?
+    var recordMonitor: Any?
+    var loop: LoopRange?
+    var lastLoopJump = Date.distantPast
+    var quizWindow: NSWindow?
+    var quizModel: QuizModel?
     var menuOpen = false
     var lastPosMs = 0, lastDurMs = 0
     var lastPlaying = false
@@ -160,12 +158,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
             guard let s = self else { return }
             s.seek(Playback.rawPosition(forLineTime: t, offset: s.offset))
         }
+        learn.onLoop = { [weak self] a, b in
+            guard let s = self else { return }
+            if let a = a, let b = b,
+               let r = LoopRange.make(lines: s.lines, a: a, b: b, duration: Double(s.lastDurMs) / 1000) {
+                s.loop = r
+                s.seek(Playback.rawPosition(forLineTime: r.startTime, offset: s.offset))
+            } else {
+                s.loop = nil
+            }
+        }
+        learn.onQuiz = { [weak self] in self?.openQuiz() }
         learn.langFor = { [weak self] line in self?.langForLine(line) ?? "en" }
         if floatOn { setFloat(true) }
-        askTargetIfNeeded()
+        showSetupIfNeeded()
         refreshDevice()
-        let t = Timer(timeInterval: 0.3, repeats: true) { [weak self] _ in self?.tick() }
-        RunLoop.main.add(t, forMode: .common)
+        runTick()
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didLaunchApplicationNotification, NSWorkspace.didTerminateApplicationNotification] {
+            workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] n in
+                let app = n.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication
+                if app?.bundleIdentifier == SpotifyPlayer.bundleID {
+                    self?.tracker.notify()
+                    self?.runTick()
+                }
+            }
+        }
         DistributedNotificationCenter.default().addObserver(
             self, selector: #selector(spotifyChanged),
             name: NSNotification.Name("com.spotify.client.PlaybackStateChanged"), object: nil,

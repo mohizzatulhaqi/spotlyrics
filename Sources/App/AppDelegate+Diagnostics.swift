@@ -3,21 +3,6 @@ import Carbon.HIToolbox
 import Translation
 
 extension AppDelegate {
-    func automationStatus() -> String {
-        guard NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").first != nil else {
-            return "unknown (Spotify is not running)"
-        }
-        let target = NSAppleEventDescriptor(bundleIdentifier: "com.spotify.client")
-        guard let desc = target.aeDesc else { return "unknown" }
-        let st = AEDeterminePermissionToAutomateTarget(desc, typeWildCard, typeWildCard, false)
-        switch Int(st) {
-        case 0: return "granted"
-        case Int(errAEEventNotPermitted): return "denied"
-        case Int(errAEEventWouldRequireUserConsent): return "not asked yet"
-        default: return "unknown (\(st))"
-        }
-    }
-
     func collectDiagnostics() async -> String {
         let info = Bundle.main.infoDictionary
         let version = (info?["CFBundleShortVersionString"] as? String) ?? "dev"
@@ -41,7 +26,7 @@ extension AppDelegate {
         }
 
         let stats = Store.cacheStats()
-        let age = lastFetch == .distantPast ? "never" : "\(Int(Date().timeIntervalSince(lastFetch)))s ago"
+        let age = tracker.lastFetchAge(now: Date()).map { "\(Int($0))s ago" } ?? "never"
         let hotFailedCount = hotFailed.count
 
         let sections: [(title: String, rows: [(String, String)])] = [
@@ -64,8 +49,8 @@ extension AppDelegate {
             ]),
             ("Spotify", [
                 ("Running", NSRunningApplication.runningApplications(withBundleIdentifier: "com.spotify.client").first != nil ? "yes" : "no"),
-                ("Automation permission", automationStatus()),
-                ("Player state", snap?.state ?? "none"),
+                ("Automation permission", automationState().label),
+                ("Player state", tracker.snap?.state ?? "none"),
                 ("Last data fetch", age),
                 ("Playback notifications received", "\(notificationCount)")
             ]),
