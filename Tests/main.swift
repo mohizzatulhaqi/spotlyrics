@@ -643,5 +643,104 @@ Prefs.playerChoice = "music"
 eq(Prefs.playerChoice, "music", "Prefs: pemutar tersimpan")
 UserDefaults.standard.removeObject(forKey: "playerChoice")
 
+let cleanCases: [(String, String)] = [
+    ("Bohemian Rhapsody - Remastered 2011", "Bohemian Rhapsody"),
+    ("Don't Stop Believin' (2022 Remaster)", "Don't Stop Believin'"),
+    ("Yesterday - Remastered 2009", "Yesterday"),
+    ("Hold Me Closer (feat. Elton John)", "Hold Me Closer"),
+    ("Stay (with Justin Bieber)", "Stay"),
+    ("Levitating (feat. DaBaby)", "Levitating"),
+    ("Song Name feat. Someone", "Song Name"),
+    ("Song Name ft. Someone Else", "Song Name"),
+    ("Blinding Lights - Radio Edit", "Blinding Lights"),
+    ("Let It Go - From \"Frozen\"", "Let It Go"),
+    ("Hotel California - Live at the Forum", "Hotel California"),
+    ("Hello [Remastered]", "Hello"),
+    ("Title (Live)", "Title"),
+    ("Title (Radio Edit)", "Title"),
+    ("Title (Explicit)", "Title"),
+    ("Judul – Single Version", "Judul"),
+    ("  Spasi   Ganda  ", "Spasi Ganda")
+]
+for (a, b2) in cleanCases { eq(TrackName.cleanTitle(a), b2, "cleanTitle: \(a)") }
+let keepCases = ["Love Story (Taylor's Version)", "봄날 (Korean Ver.)", "Dynamite (Japanese Version)", "Stay With Me", "With or Without You", "Live Forever", "Mono", "Song (Acoustic)", "Heaven (Remix)", "Bad Guy", "Everything U Are"]
+for k in keepCases { eq(TrackName.cleanTitle(k), k, "cleanTitle: dipertahankan \(k)") }
+eq(TrackName.cleanTitle("(Live)"), "(Live)", "cleanTitle: tidak boleh jadi kosong")
+eq(TrackName.cleanTitle("It’s Time"), "It's Time", "cleanTitle: tanda kutip lengkung diluruskan")
+eq(TrackName.firstArtist("The Weeknd, Daft Punk", separators: [","]), "The Weeknd", "firstArtist: koma")
+eq(TrackName.firstArtist("A; B", separators: [";"]), "A", "firstArtist: titik koma")
+eq(TrackName.firstArtist("Solo", separators: [","]), "Solo", "firstArtist: satu artis")
+eq(TrackName.firstArtist("Ayu & Budi", separators: [" & "]), "Ayu", "firstArtist: ampersand")
+let vs = TrackName.variants(title: "Closer - Remastered 2016", artist: "The Chainsmokers, Halsey")
+eq(vs.first, TrackName.Variant(title: "Closer", artist: "The Chainsmokers, Halsey"), "variants: judul bersih dengan artis asli dulu")
+check(vs.contains(TrackName.Variant(title: "Closer", artist: "The Chainsmokers")), "variants: judul bersih dengan artis pertama")
+check(vs.contains(TrackName.Variant(title: "Closer - Remastered 2016", artist: "The Chainsmokers")), "variants: judul asli dengan artis pertama")
+check(!vs.contains(TrackName.Variant(title: "Closer - Remastered 2016", artist: "The Chainsmokers, Halsey")), "variants: tidak memuat pasangan asli")
+eq(TrackName.variants(title: "Shape of You", artist: "Ed Sheeran").count, 0, "variants: judul dan artis bersih tidak punya variasi")
+check(TrackName.variants(title: "A (feat. B)", artist: "X, Y & Z", limit: 2).count <= 2, "variants: dibatasi")
+eq(Set(TrackName.variants(title: "A (feat. B)", artist: "X, Y").map { $0.title + "|" + $0.artist }).count, TrackName.variants(title: "A (feat. B)", artist: "X, Y").count, "variants: tanpa duplikat")
+check(TrackName.similar("Bohemian Rhapsody - Remastered 2011", "Bohemian Rhapsody"), "similar: abaikan embel-embel")
+check(TrackName.similar("HELLO", "hello (live)"), "similar: huruf besar dan embel-embel")
+check(TrackName.similar("Café del Mar", "cafe del mar"), "similar: aksen")
+check(TrackName.similar("Love Story", "Love Story (Taylor's Version)"), "similar: mengandung")
+check(!TrackName.similar("Bohemian Rhapsody", "Another One Bites the Dust"), "similar: lagu berbeda")
+check(!TrackName.similar("A", "A"), "similar: terlalu pendek tidak dianggap")
+check(TrackName.similar("봄날", "봄날"), "similar: Hangul")
+
+eq(Lyrics.reply(for: 200), .found, "reply: 200 ditemukan")
+eq(Lyrics.reply(for: 404), .notFound, "reply: 404 tidak ada (jawaban pasti)")
+eq(Lyrics.reply(for: 429), .retry, "reply: 429 dicoba ulang, bukan 'tidak ada'")
+eq(Lyrics.reply(for: 500), .retry, "reply: 500 dicoba ulang")
+eq(Lyrics.reply(for: 503), .retry, "reply: 503 dicoba ulang")
+eq(Lyrics.reply(for: 403), .failed, "reply: 403 gagal")
+eq(Lyrics.reply(for: 301), .failed, "reply: pengalihan tidak dianggap jawaban")
+
+check(PlayerReading(title: "Ep 12", artist: "Show", adURL: "spotify:episode:abc").isEpisode, "episode: url episode")
+check(!PlayerReading(title: "Lagu", artist: "A", adURL: "spotify:track:abc").isEpisode, "episode: lagu biasa bukan episode")
+check(!PlayerReading(title: "File", artist: "A", adURL: "spotify:local:a:b:c:1").isEpisode, "episode: berkas lokal tetap dicari liriknya")
+check(!PlayerReading(title: "x", artist: "y", adURL: "spotify:ad:1").isEpisode, "episode: iklan bukan episode")
+check(PlayerReading(title: "x", artist: "y", adURL: "spotify:ad:1").isAd, "episode: iklan tetap terdeteksi")
+check(Snap(reading: PlayerReading(title: "Ep", artist: "S", adURL: "spotify:episode:z"), at: Date()).isEpisode, "episode: Snap meneruskan")
+check(!PlayerReading(title: "Ep", artist: "S", adURL: "").isEpisode, "episode: tanpa url bukan episode (Apple Music)")
+
+func optJSON(id: Int, track: String = "T", artist: String = "A", album: String = "B", duration: Double? = 200, synced: String? = nil, plain: String? = nil, instrumental: Bool = false) -> [String: Any] {
+    var j: [String: Any] = ["id": id, "trackName": track, "artistName": artist, "albumName": album, "instrumental": instrumental]
+    if let d = duration { j["duration"] = d }
+    if let s = synced { j["syncedLyrics"] = s }
+    if let p = plain { j["plainLyrics"] = p }
+    return j
+}
+let oSync = LyricsOption.from(json: optJSON(id: 1, synced: "[00:01.00] satu\n[00:05.00] dua"))
+check(oSync != nil && oSync!.synced && oSync!.lines.count == 2, "option: tersinkron")
+let oPlain = LyricsOption.from(json: optJSON(id: 2, plain: "satu\ndua\ntiga"))
+check(oPlain != nil && !oPlain!.synced && oPlain!.lines.count == 3, "option: teks polos")
+eq(LyricsOption.from(json: optJSON(id: 3, instrumental: true)), nil, "option: instrumental dilewati")
+eq(LyricsOption.from(json: optJSON(id: 4)), nil, "option: tanpa lirik dilewati")
+eq(LyricsOption.from(json: optJSON(id: 5, plain: "\n\n")), nil, "option: hanya baris kosong dilewati")
+eq(LyricsOption.from(json: optJSON(id: 6, synced: "bukan lrc", plain: "satu\ndua"))?.synced, false, "option: LRC rusak jatuh ke teks polos")
+check(LyricsOption.from(json: optJSON(id: 7, synced: "[00:01.00] 사랑해\n[00:02.00] 너무 좋아"))?.native == true, "option: aksara asli terdeteksi")
+check(LyricsOption.from(json: ["trackName": "X", "plainLyrics": "a\nb"])?.id == -1, "option: tanpa id memakai -1")
+eq(oSync?.durationDiff(from: 198), 2.0, "option: selisih durasi")
+eq(oSync?.durationDiff(from: 0), nil, "option: tanpa durasi target")
+eq(LyricsOption.from(json: optJSON(id: 8, duration: nil, plain: "a\nb"))?.durationDiff(from: 200), nil, "option: tanpa durasi opsi")
+eq(LyricsOption.from(json: optJSON(id: 9, synced: "[00:01.00] a\n[00:02.00] b\n[00:03.00] c\n[00:04.00] d\n[00:05.00] e\n[00:06.00] f\n[00:07.00] g"))?.preview.components(separatedBy: "\n").count, 6, "option: pratinjau enam baris")
+let r1 = LyricsOption.from(json: optJSON(id: 10, duration: 230, synced: "[00:01.00] x"))!
+let r2 = LyricsOption.from(json: optJSON(id: 11, duration: 201, synced: "[00:01.00] x"))!
+let r3 = LyricsOption.from(json: optJSON(id: 12, duration: 200, plain: "a\nb"))!
+let r4 = LyricsOption.from(json: optJSON(id: 13, duration: nil, synced: "[00:01.00] x"))!
+eq(LyricsOption.ranked([r3, r1, r4, r2], target: 200).map { $0.id }, [11, 10, 13, 12], "ranked: tersinkron dulu, lalu selisih durasi, tanpa durasi terakhir, teks polos di akhir")
+eq(LyricsOption.ranked([r2, r2, r1], target: 200).map { $0.id }, [11, 10], "ranked: id ganda dibuang")
+eq(LyricsOption.ranked([], target: 200).count, 0, "ranked: kosong")
+check(r2.matches(current: r2.lines) && !r2.matches(current: r1.lines + r1.lines) && !r2.matches(current: []), "option: cocok dengan lirik yang dipakai")
+eq(Lyrics.cacheKey(artist: "A", title: "T", duration: 200), "A|T|200", "cacheKey")
+Store.writeLyrics("__tes_pin__|x|1", [Line(time: 1, text: "p")], synced: true, pinned: true)
+check(Store.readLyrics("__tes_pin__|x|1")?.isPinned == true, "cache: sematan tersimpan")
+Store.writeLyrics("__tes_pin__|x|1", [Line(time: 1, text: "p")])
+check(Store.readLyrics("__tes_pin__|x|1")?.isPinned == false, "cache: bawaan tidak disematkan")
+Lyrics.pin("__tes_pin__|x|1", r2)
+check(Store.readLyrics("__tes_pin__|x|1")?.isPinned == true && Store.readLyrics("__tes_pin__|x|1")?.lines.count == r2.lines.count, "pin: menyimpan lirik pilihan")
+Lyrics.unpin("__tes_pin__|x|1")
+check(Store.readLyrics("__tes_pin__|x|1") == nil, "unpin: menghapus cache")
+
 print("\(total - failures)/\(total) passed")
 exit(failures == 0 ? 0 : 1)

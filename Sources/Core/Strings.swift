@@ -34,7 +34,8 @@ enum S: String, CaseIterable {
     case copyExportMenu, copyLine, copyAll, exportSRT, exportText, copiedLine, copiedAll, exportDoneMsg, exportFailed
     case hkCopy, menuBarCoverToggle, lyricsNotSynced
     case btnSpeak, noVoice, quizSpeak
-    case playerLabel, playerAuto, playerSpotify, playerMusic
+    case playerLabel, playerAuto, playerSpotify, playerMusic, podcastNoLyrics
+    case pickMenu, pickTitle, pickLoading, pickNone, pickOffline, pickSynced, pickPlain, pickNative, pickInUse, pickPreview, pickUse, pickAuto
     case pressKeys, recordNeedMod, recordConflict, resetShortcut, resetAllShortcuts, recordHint
     case setupTitle, setupSubtitle, setupSpotify, setupSpotifyOk, setupSpotifyNo, setupOpenSpotify
     case setupAutomation, setupAutoGranted, setupAutoDenied, setupAutoAsk, setupAutoWait, setupAllow
@@ -240,6 +241,19 @@ extension L10n {
         .btnSpeak: "Ucapkan",
         .noVoice: "Suara untuk %@ belum terpasang. Tambahkan di System Settings > Accessibility > Spoken Content > System Voice.",
         .quizSpeak: "Ucapkan baris",
+        .podcastNoLyrics: "Podcast: tidak ada lirik",
+        .pickMenu: "Pilih versi lirik…",
+        .pickTitle: "Pilih versi lirik",
+        .pickLoading: "Mencari versi di LRCLIB…",
+        .pickNone: "Tidak ada versi lirik yang ditemukan",
+        .pickOffline: "Tidak bisa terhubung ke LRCLIB",
+        .pickSynced: "Tersinkron",
+        .pickPlain: "Tanpa timestamp",
+        .pickNative: "Aksara asli",
+        .pickInUse: "Dipakai",
+        .pickPreview: "Pratinjau",
+        .pickUse: "Gunakan versi ini",
+        .pickAuto: "Kembali ke otomatis",
         .playerLabel: "Pemutar musik",
         .playerAuto: "Otomatis",
         .playerSpotify: "Spotify",
@@ -438,6 +452,19 @@ extension L10n {
         .btnSpeak: "Speak",
         .noVoice: "No voice for %@ is installed. Add one in System Settings > Accessibility > Spoken Content > System Voice.",
         .quizSpeak: "Speak line",
+        .podcastNoLyrics: "Podcast: no lyrics",
+        .pickMenu: "Choose lyrics version…",
+        .pickTitle: "Choose lyrics version",
+        .pickLoading: "Looking for versions on LRCLIB…",
+        .pickNone: "No lyrics versions were found",
+        .pickOffline: "Couldn't reach LRCLIB",
+        .pickSynced: "Synced",
+        .pickPlain: "Plain text",
+        .pickNative: "Native script",
+        .pickInUse: "In use",
+        .pickPreview: "Preview",
+        .pickUse: "Use this version",
+        .pickAuto: "Back to automatic",
         .playerLabel: "Music player",
         .playerAuto: "Automatic",
         .playerSpotify: "Spotify",
