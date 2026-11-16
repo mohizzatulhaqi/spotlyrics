@@ -4,6 +4,7 @@ import Cocoa
 
 final class LyricsTextView: NSTextView {
     var onClick: ((String?, String) -> Void)?
+    var onDoubleClick: ((Int) -> Void)?
 
     override func mouseDown(with event: NSEvent) {
         let ns = string as NSString
@@ -18,6 +19,11 @@ final class LyricsTextView: NSTextView {
         let inTrans = sep.location != NSNotFound && i >= paraR.location + sep.location
         let origR = NSRange(location: paraR.location, length: (origText as NSString).length)
         let line = origText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if event.clickCount == 2 {
+            setSelectedRange(origR)
+            onDoubleClick?(paraR.location)
+            return
+        }
 
         var word = ""
         var wr = origR
@@ -41,6 +47,8 @@ final class LearnPanel: NSObject, @unchecked Sendable {
     var saveBtn: NSButton!
     var exportBtn: NSButton!
     var lastMeaningFound = false
+    var times: [Double] = []
+    var onSeek: (Double) -> Void = { _ in }
 
     var ranges: [NSRange] = []
     var curIdx = -1
@@ -88,6 +96,7 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         tv.isSelectable = true
         tv.textContainerInset = NSSize(width: 12, height: 10)
         tv.onClick = { [weak self] word, line in self?.clicked(word: word, line: line) }
+        tv.onDoubleClick = { [weak self] loc in self?.jump(toParagraphAt: loc) }
         cv.addSubview(scroll(tv, NSRect(x: 0, y: 190, width: 520, height: 410), [.width, .height]))
 
         result.isSelectable = true
@@ -125,8 +134,9 @@ final class LearnPanel: NSObject, @unchecked Sendable {
         updateCount()
     }
 
-    func setLyrics(_ texts: [String], title: String, translations: [String] = []) {
+    func setLyrics(_ texts: [String], title: String, translations: [String] = [], times: [Double] = []) {
         window.title = L(.learnWindowSong, title)
+        self.times = times
         var s = ""
         ranges = []
         var trRanges: [NSRange] = []
@@ -192,6 +202,14 @@ final class LearnPanel: NSObject, @unchecked Sendable {
     }
 
     func show(_ s: String) { result.string = s }
+
+    func jump(toParagraphAt loc: Int) {
+        guard let i = ranges.firstIndex(where: { $0.location == loc }), i < times.count else { return }
+        let t = times[i]
+        onSeek(t)
+        lastClick = Date()
+        show(L(.jumpedTo, String(format: "%d:%02d", Int(t) / 60, Int(t) % 60)))
+    }
 
     func clicked(word: String?, line: String) {
         lastClick = Date()

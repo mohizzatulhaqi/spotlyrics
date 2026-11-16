@@ -47,6 +47,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var romaji: [String] = []
     var lineLangs: [String] = []    // detected language per line, aligned with `lines`
     var transGen = 0
+    var notificationCount = 0
+    var loggedAutomationFailure = false
+    var romSuggestion: String?
+    var suggestedKeys = Set<String>()
     var langModel: LangModel?
     let translator = Translator()
     var transKey = ""               // song that owns `trans` (also marks that a translation was already attempted)
@@ -105,6 +109,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
             mm.onFloat = { [weak self] in self?.setFloat(!(self?.floatOn ?? false)); self?.syncMenuFlags() }
             mm.onRomaji = { [weak self] in self?.toggleRomaji(); self?.syncMenuFlags() }
             mm.onHide = { [weak self] in self?.toggleLyrics(); self?.syncMenuFlags() }
+            mm.onSuggestApply = { [weak self] in self?.applyRomanizedSuggestion() }
+            mm.onSuggestDismiss = { [weak self] in self?.dismissRomanizedSuggestion() }
             mm.onSettings = { [weak self] in self?.item.menu?.cancelTracking(); self?.openSettings(tab: nil) }
             mm.onHeight = { [weak self] h in
                 if h > 0 { self?.headerItem.view?.frame.size.height = h }
@@ -149,6 +155,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         learn.prep = { [weak self] t in
             guard let s = self, let o = Prefs.songOverride(s.trackKey), Romaji.base(o) != nil else { return t }
             return Romaji.convert(t, o)
+        }
+        learn.onSeek = { [weak self] t in
+            guard let s = self else { return }
+            s.seek(Playback.rawPosition(forLineTime: t, offset: s.offset))
         }
         learn.langFor = { [weak self] line in self?.langForLine(line) ?? "en" }
         if floatOn { setFloat(true) }

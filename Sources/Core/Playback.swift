@@ -1,6 +1,16 @@
 import Foundation
 
 enum Playback {
+    static let lead = 0.25
+
+    static func effective(posMs: Int, offset: Double) -> Double {
+        Double(posMs) / 1000 + lead + offset
+    }
+
+    static func rawPosition(forLineTime t: Double, offset: Double) -> Double {
+        max(0, t - lead - offset + 0.05)
+    }
+
     static func position(posMs: Int, durMs: Int, playing: Bool, at: Date, now: Date) -> Int {
         guard playing else { return posMs }
         let p = posMs + max(0, Int(now.timeIntervalSince(at) * 1000))
