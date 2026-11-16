@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Show toolchain
+        run: |
+          sw_vers
+          swift --version
+      - name: Run tests
+        run: ./Tests/run.sh
+      - name: Build the app bundle
+        run: ./build.sh
+      - name: Check the bundle
+        run: |
+          codesign --verify --verbose SpotLyrics.app
+          plutil -lint SpotLyrics.app/Contents/Info.plist
