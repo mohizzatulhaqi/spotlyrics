@@ -9,6 +9,11 @@ struct AnkiNote: Equatable {
     var song: String
     var wordAudio: String?
     var lineAudio: String?
+    var reading: String = ""
+    var lineReading: String = ""
+    var lineTranslation: String = ""
+    var tags: [String] = []
+    var reverse: Bool = false
 }
 
 struct AnkiMedia: Equatable {
@@ -74,8 +79,10 @@ final class SQLiteDB {
 }
 
 enum AnkiPackage {
-    static let fieldNames = ["Word", "Meaning", "Line", "Song", "WordAudio", "LineAudio"]
+    static let fieldNames = ["Word", "Reading", "Meaning", "Line", "LineReading", "LineTranslation", "Song", "WordAudio", "LineAudio", "Reverse"]
     static let modelName = "SpotLyrics Vocabulary"
+    static let stableModelID = 1_732_000_000_123
+    static let stableDeckID = 1_732_000_000_456
     static let separator = "\u{1f}"
 
     static func htmlEscape(_ s: String) -> String {
@@ -95,8 +102,39 @@ enum AnkiPackage {
     static func checksum(_ s: String) -> Int { Int(sha1Hex(s).prefix(8), radix: 16) ?? 0 }
 
     static func fields(_ n: AnkiNote) -> [String] {
-        [htmlEscape(n.word), htmlEscape(n.meaning), htmlEscape(n.line), htmlEscape(n.song),
-         n.wordAudio.map { "[sound:\($0)]" } ?? "", n.lineAudio.map { "[sound:\($0)]" } ?? ""]
+        [htmlEscape(n.word), htmlEscape(n.reading), htmlEscape(n.meaning), htmlEscape(n.line), htmlEscape(n.lineReading),
+         htmlEscape(n.lineTranslation), htmlEscape(n.song),
+         n.wordAudio.map { "[sound:\($0)]" } ?? "", n.lineAudio.map { "[sound:\($0)]" } ?? "", n.reverse ? "1" : ""]
+    }
+
+    static func tag(_ s: String) -> String {
+        var out = ""
+        var lastUnderscore = false
+        for ch in s.trimmingCharacters(in: .whitespacesAndNewlines) {
+            if ch.isLetter || ch.isNumber || ch == "-" {
+                out.append(ch)
+                lastUnderscore = false
+            } else if !lastUnderscore {
+                out.append("_")
+                lastUnderscore = true
+            }
+        }
+        return String(out.trimmingCharacters(in: CharacterSet(charactersIn: "_")).prefix(60))
+    }
+
+    static func tags(song: String, lang: String?) -> [String] {
+        var out = ["SpotLyrics"]
+        let parts = song.components(separatedBy: " - ")
+        let artist = tag(parts.first ?? "")
+        let title = tag(parts.dropFirst().joined(separator: " - "))
+        if !artist.isEmpty { out.append("SpotLyrics::" + artist + (title.isEmpty ? "" : "::" + title)) }
+        if let l = lang, !tag(l).isEmpty { out.append("lang_" + tag(l)) }
+        return out
+    }
+
+    static func tagString(_ tags: [String]) -> String {
+        let clean = tags.map { $0.replacingOccurrences(of: " ", with: "_") }.filter { !$0.isEmpty }
+        return clean.isEmpty ? "" : " " + clean.joined(separator: " ") + " "
     }
 
     static func json(_ obj: Any) -> String {
@@ -104,23 +142,29 @@ enum AnkiPackage {
         return String(data: d, encoding: .utf8) ?? "{}"
     }
 
-    static let css = ".card { font-family: -apple-system, Arial, sans-serif; font-size: 20px; text-align: center; color: black; background-color: white; } .word { font-size: 34px; font-weight: bold; margin-bottom: 8px; } .meaning { margin: 10px 0; white-space: pre-wrap; } .line { font-style: italic; color: #444; margin-top: 12px; } .song { font-size: 14px; color: #888; margin-top: 10px; }"
+    static let css = ".card { font-family: -apple-system, Arial, sans-serif; font-size: 20px; text-align: center; color: black; background-color: white; } .word { font-size: 34px; font-weight: bold; margin-bottom: 8px; } .reading { font-size: 18px; color: #666; margin-bottom: 6px; } .meaning { margin: 10px 0; white-space: pre-wrap; } .line { font-style: italic; color: #444; margin-top: 12px; } .linereading { font-size: 15px; color: #777; } .linetr { font-size: 16px; color: #2a6; margin-top: 4px; } .song { font-size: 14px; color: #888; margin-top: 10px; }"
 
     static func modelObject(modelID: Int, deckID: Int, now: Int) -> [String: Any] {
         let flds: [[String: Any]] = fieldNames.enumerated().map { i, n in
             ["name": n, "ord": i, "sticky": false, "rtl": false, "font": "Arial", "size": 20, "media": [String]()]
         }
-        let tmpl: [String: Any] = [
-            "name": "Card 1", "ord": 0,
+        let forward: [String: Any] = [
+            "name": "Word to meaning", "ord": 0,
             "qfmt": "<div class=\"word\">{{Word}}</div>{{WordAudio}}",
-            "afmt": "{{FrontSide}}<hr id=answer><div class=\"meaning\">{{Meaning}}</div><div class=\"line\">{{Line}}</div>{{LineAudio}}<div class=\"song\">{{Song}}</div>",
+            "afmt": "{{FrontSide}}<hr id=answer>{{#Reading}}<div class=\"reading\">{{Reading}}</div>{{/Reading}}<div class=\"meaning\">{{Meaning}}</div>{{#Line}}<div class=\"line\">{{Line}}</div>{{#LineReading}}<div class=\"linereading\">{{LineReading}}</div>{{/LineReading}}{{#LineTranslation}}<div class=\"linetr\">{{LineTranslation}}</div>{{/LineTranslation}}{{LineAudio}}{{/Line}}<div class=\"song\">{{Song}}</div>",
+            "bqfmt": "", "bafmt": "", "did": NSNull(), "bfont": "", "bsize": 0
+        ]
+        let backward: [String: Any] = [
+            "name": "Meaning to word", "ord": 1,
+            "qfmt": "{{#Reverse}}<div class=\"meaning\">{{Meaning}}</div>{{/Reverse}}",
+            "afmt": "{{FrontSide}}<hr id=answer><div class=\"word\">{{Word}}</div>{{WordAudio}}{{#Reading}}<div class=\"reading\">{{Reading}}</div>{{/Reading}}<div class=\"song\">{{Song}}</div>",
             "bqfmt": "", "bafmt": "", "did": NSNull(), "bfont": "", "bsize": 0
         ]
         return [
             "id": modelID, "name": modelName, "type": 0, "mod": now, "usn": -1, "sortf": 0, "did": deckID,
-            "tmpls": [tmpl], "flds": flds, "css": css,
+            "tmpls": [forward, backward], "flds": flds, "css": css,
             "latexPre": "\\documentclass[12pt]{article}\n\\special{papersize=3in,5in}\n\\usepackage[utf8]{inputenc}\n\\usepackage{amssymb,amsmath}\n\\pagestyle{empty}\n\\setlength{\\parindent}{0in}\n\\begin{document}\n",
-            "latexPost": "\\end{document}", "latexsvg": false, "req": [[0, "any", [0]]], "tags": [String](), "vers": [Int]()
+            "latexPost": "\\end{document}", "latexsvg": false, "req": [[0, "all", [0]], [1, "all", [2, 9]]], "tags": [String](), "vers": [Int]()
         ]
     }
 
@@ -156,8 +200,8 @@ enum AnkiPackage {
         """)
         let sec = Int(now.timeIntervalSince1970)
         let ms = sec * 1000
-        let modelID = ms
-        let deckID = ms + 1
+        let modelID = stableModelID
+        let deckID = stableDeckID
         let conf: [String: Any] = ["nextPos": notes.count + 1, "estTimes": true, "activeDecks": [deckID], "sortType": "noteFld",
                                    "timeLim": 0, "sortBackwards": false, "addToCur": true, "curDeck": deckID, "newBury": true,
                                    "newSpread": 0, "dueCounts": true, "curModel": String(modelID), "collapseTime": 1200]
@@ -168,10 +212,14 @@ enum AnkiPackage {
         for (i, n) in notes.enumerated() {
             let flds = fields(n)
             let noteID = ms + i + 1
-            try db.run("INSERT INTO notes VALUES (?, ?, ?, ?, -1, '', ?, ?, ?, 0, '')",
-                       [noteID, guid(for: n), modelID, sec, flds.joined(separator: separator), n.word, checksum(n.word)])
+            try db.run("INSERT INTO notes VALUES (?, ?, ?, ?, -1, ?, ?, ?, ?, 0, '')",
+                       [noteID, guid(for: n), modelID, sec, tagString(n.tags), flds.joined(separator: separator), n.word, checksum(n.word)])
             try db.run("INSERT INTO cards VALUES (?, ?, ?, 0, ?, -1, 0, 0, ?, 0, 0, 0, 0, 0, 0, 0, 0, '')",
                        [noteID, noteID, deckID, sec, i + 1])
+            if n.reverse {
+                try db.run("INSERT INTO cards VALUES (?, ?, ?, 1, ?, -1, 0, 0, ?, 0, 0, 0, 0, 0, 0, 0, 0, '')",
+                           [noteID + 500_000_000, noteID, deckID, sec, notes.count + i + 1])
+            }
         }
     }
 
@@ -204,6 +252,10 @@ enum AnkiPackage {
         var modelFieldCount: Int
         var noteFieldCounts: [Int]
         var deckNames: [String]
+        var templateCount: Int = 0
+        var cardOrds: [Int] = []
+        var tags: [String] = []
+        var modelIDs: [Int] = []
     }
 
     static func summary(ofCollection path: String) -> Summary? {
@@ -212,15 +264,24 @@ enum AnkiPackage {
         let cards = Int(db.rows("SELECT count(*) FROM cards").first?.first ?? "") ?? -1
         let version = db.rows("SELECT ver FROM col").first?.first ?? ""
         var fieldCount = 0
+        var templateCount = 0
+        var modelIDs: [Int] = []
         var deckNames: [String] = []
         if let row = db.rows("SELECT models, decks FROM col").first, row.count == 2 {
             if let m = (try? JSONSerialization.jsonObject(with: Data(row[0].utf8))) as? [String: [String: Any]],
-               let first = m.values.first, let f = first["flds"] as? [Any] { fieldCount = f.count }
+               let first = m.values.first, let f = first["flds"] as? [Any] {
+                fieldCount = f.count
+                templateCount = (first["tmpls"] as? [Any])?.count ?? 0
+                modelIDs = m.values.compactMap { $0["id"] as? Int }
+            }
             if let d = (try? JSONSerialization.jsonObject(with: Data(row[1].utf8))) as? [String: [String: Any]] {
                 deckNames = d.values.compactMap { $0["name"] as? String }.sorted()
             }
         }
         let counts = db.rows("SELECT flds FROM notes ORDER BY id").map { $0[0].components(separatedBy: separator).count }
-        return Summary(notes: notes, cards: cards, version: version, modelFieldCount: fieldCount, noteFieldCounts: counts, deckNames: deckNames)
+        let ords = db.rows("SELECT ord FROM cards ORDER BY id").compactMap { Int($0[0]) }
+        let tags = db.rows("SELECT tags FROM notes ORDER BY id").map { $0[0] }
+        return Summary(notes: notes, cards: cards, version: version, modelFieldCount: fieldCount, noteFieldCounts: counts,
+                       deckNames: deckNames, templateCount: templateCount, cardOrds: ords, tags: tags, modelIDs: modelIDs)
     }
 }

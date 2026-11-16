@@ -72,6 +72,11 @@ enum Prefs {
         get { UserDefaults.standard.object(forKey: "menuBarCover") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "menuBarCover") }
     }
+    static var ankiReverse: Bool {
+        get { UserDefaults.standard.bool(forKey: "ankiReverse") }
+        set { UserDefaults.standard.set(newValue, forKey: "ankiReverse") }
+    }
+
     static var readingStyle: String {
         get { UserDefaults.standard.string(forKey: "readingStyle") ?? "romaji" }
         set { UserDefaults.standard.set(newValue, forKey: "readingStyle") }

@@ -41,3 +41,15 @@ extension AppDelegate {
         quizWindow?.close()
     }
 }
+
+extension AppDelegate {
+    func vocabInfo(word: String, line: String) -> (reading: String, lineReading: String, lineTranslation: String) {
+        let lang = langForLine(line)
+        let style = Prefs.readingStyle
+        let idx = lines.firstIndex(where: { $0.text.trimmingCharacters(in: .whitespacesAndNewlines) == line })
+        let wordReading = Readings.reading(word, lang: lang, style: style)
+        let lineReading = idx.flatMap { $0 < romaji.count ? romaji[$0] : nil } ?? Readings.reading(line, lang: lang, style: style)
+        let translation = (idx != nil && transKey == trackKey && idx! < trans.count) ? trans[idx!] : ""
+        return (wordReading, lineReading, translation)
+    }
+}
