@@ -63,7 +63,9 @@ enum Lyrics {
     static func cacheKey(artist: String, title: String, duration: Int) -> String { "\(artist)|\(title)|\(duration)" }
 
     static func pin(_ key: String, _ option: LyricsOption) {
-        Store.writeLyrics(key, option.lines, synced: option.synced, pinned: true)
+        let old = Store.readLyrics(key)
+        let meta = old.flatMap { c in c.title.map { SongMeta(artist: c.artist ?? "", title: $0, album: c.album ?? "", duration: c.duration ?? 0) } }
+        Store.writeLyrics(key, option.lines, synced: option.synced, pinned: true, meta: meta)
     }
 
     static func unpin(_ key: String) { Store.removeLyrics(key) }
@@ -112,6 +114,8 @@ enum Lyrics {
     static func load(title: String, artist: String, album: String, duration: Int, refresh: Bool = false) async -> LyricsResult {
         let cacheKey = Lyrics.cacheKey(artist: artist, title: title, duration: duration)
         let cached = Store.readLyrics(cacheKey)
+        let meta = SongMeta(artist: artist, title: title, album: album, duration: duration)
+        if let c = cached, !c.lines.isEmpty { Store.backfillMeta(cacheKey, c, meta) }
         if !refresh, let c = cached, c.isPinned, !c.lines.isEmpty {
             return LyricsResult(lines: c.lines, synced: c.isSynced)
         }
@@ -123,7 +127,7 @@ enum Lyrics {
         var reached = false
         let found = await fetch(title: title, artist: artist, album: album, duration: duration, reached: &reached)
         if let f = found {
-            Store.writeLyrics(cacheKey, f.lines, synced: f.synced)
+            Store.writeLyrics(cacheKey, f.lines, synced: f.synced, meta: meta)
             if !f.synced { Diagnostics.log("lyrics: only unsynced lyrics found") }
             return LyricsResult(lines: f.lines, synced: f.synced)
         }

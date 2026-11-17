@@ -39,11 +39,44 @@ struct LyricsResult: Equatable {
     static let empty = LyricsResult(lines: [], synced: true)
 }
 
+struct SongMeta: Equatable {
+    let artist: String
+    let title: String
+    let album: String
+    let duration: Int
+}
+
+struct LibraryEntry: Identifiable, Equatable {
+    let file: URL
+    let artist: String
+    let title: String
+    let album: String
+    let duration: Int
+    let saved: Date
+    let lines: [Line]
+    let synced: Bool
+    let pinned: Bool
+    var id: String { file.lastPathComponent }
+    var name: String { "\(artist) - \(title)" }
+    var transKey: String { "\(artist)|\(title)" }
+
+    func matches(_ query: String) -> Bool {
+        let q = Vocab.fold(query.trimmingCharacters(in: .whitespacesAndNewlines))
+        if q.isEmpty { return true }
+        if Vocab.fold(name).contains(q) || Vocab.fold(album).contains(q) { return true }
+        return lines.contains { Vocab.fold($0.text).contains(q) }
+    }
+}
+
 struct CachedLyrics: Codable {
     let saved: Date
     let lines: [Line]
     let synced: Bool?
     let pinned: Bool?
+    var artist: String? = nil
+    var title: String? = nil
+    var album: String? = nil
+    var duration: Int? = nil
     var isSynced: Bool { synced ?? true }
     var isPinned: Bool { pinned ?? false }
 }

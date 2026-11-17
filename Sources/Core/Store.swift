@@ -31,8 +31,10 @@ enum Store {
         try? FileManager.default.removeItem(at: lyricsFile(key))
     }
 
-    static func writeLyrics(_ key: String, _ lines: [Line], synced: Bool = true, pinned: Bool = false) {
-        if let d = try? JSONEncoder().encode(CachedLyrics(saved: Date(), lines: lines, synced: synced, pinned: pinned ? true : nil)) {
+    static func writeLyrics(_ key: String, _ lines: [Line], synced: Bool = true, pinned: Bool = false, meta: SongMeta? = nil) {
+        let c = CachedLyrics(saved: Date(), lines: lines, synced: synced, pinned: pinned ? true : nil,
+                             artist: meta?.artist, title: meta?.title, album: meta?.album, duration: meta?.duration)
+        if let d = try? JSONEncoder().encode(c) {
             try? d.write(to: lyricsFile(key), options: .atomic)
         }
     }
@@ -49,6 +51,23 @@ enum Store {
         let l = scan(lyricsDir, suffix: ".json")
         let t = scan(dir, suffix: ".tr.json")
         return (l.0, l.1, t.0, t.1)
+    }
+
+    static func backfillMeta(_ key: String, _ c: CachedLyrics, _ meta: SongMeta) {
+        guard c.title == nil else { return }
+        writeLyrics(key, c.lines, synced: c.isSynced, pinned: c.isPinned, meta: meta)
+    }
+
+    static func library(in dir: URL = Store.lyricsDir) -> [LibraryEntry] {
+        let urls = (try? FileManager.default.contentsOfDirectory(at: dir, includingPropertiesForKeys: nil)) ?? []
+        var out: [LibraryEntry] = []
+        for u in urls where u.pathExtension == "json" {
+            guard let d = try? Data(contentsOf: u), let c = try? JSONDecoder().decode(CachedLyrics.self, from: d),
+                  !c.lines.isEmpty, let title = c.title, let artist = c.artist else { continue }
+            out.append(LibraryEntry(file: u, artist: artist, title: title, album: c.album ?? "", duration: c.duration ?? 0,
+                                    saved: c.saved, lines: c.lines, synced: c.isSynced, pinned: c.isPinned))
+        }
+        return out.sorted { ($0.artist.lowercased(), $0.title.lowercased()) < ($1.artist.lowercased(), $1.title.lowercased()) }
     }
 
     static func readTrans(_ key: String) -> [String]? {

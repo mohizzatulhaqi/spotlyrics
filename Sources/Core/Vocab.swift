@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Vocabulary + Anki export
 
-struct VocabEntry: Codable, Identifiable {
+struct VocabEntry: Codable, Equatable, Identifiable {
     var word: String
     var meaning: String
     var line: String
@@ -12,6 +12,12 @@ struct VocabEntry: Codable, Identifiable {
     var reading: String?
     var lineReading: String?
     var lineTranslation: String?
+    var due: Date?
+    var interval: Double?
+    var ease: Double?
+    var reps: Int?
+    var lapses: Int?
+    var lastReview: Date?
 
     var id: String { word.lowercased() }
 }
@@ -42,6 +48,13 @@ enum Vocab {
         let kept = load(from: url).filter { !ids.contains($0.id) }
         save(kept, to: url)
         return kept.count
+    }
+
+    static func saveEntry(_ e: VocabEntry, in url: URL = Vocab.file) {
+        var all = load(from: url)
+        guard let i = all.firstIndex(where: { $0.id == e.id }) else { return }
+        all[i] = e
+        save(all, to: url)
     }
 
     static func setMeaning(id: String, _ meaning: String, in url: URL = Vocab.file) {

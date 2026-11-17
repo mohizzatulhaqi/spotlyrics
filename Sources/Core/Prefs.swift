@@ -72,6 +72,14 @@ enum Prefs {
         get { UserDefaults.standard.object(forKey: "menuBarCover") as? Bool ?? true }
         set { UserDefaults.standard.set(newValue, forKey: "menuBarCover") }
     }
+    static var reviewNewPerSession: Int {
+        get { UserDefaults.standard.object(forKey: "reviewNewPerSession") as? Int ?? 10 }
+        set { UserDefaults.standard.set(newValue, forKey: "reviewNewPerSession") }
+    }
+    static var reviewReverse: Bool {
+        get { UserDefaults.standard.bool(forKey: "reviewReverse") }
+        set { UserDefaults.standard.set(newValue, forKey: "reviewReverse") }
+    }
     static var ankiReverse: Bool {
         get { UserDefaults.standard.bool(forKey: "ankiReverse") }
         set { UserDefaults.standard.set(newValue, forKey: "ankiReverse") }
