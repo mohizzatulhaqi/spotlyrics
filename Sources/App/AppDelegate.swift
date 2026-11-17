@@ -69,6 +69,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var offset = 0.0
     var tickCount = 0
     let maxChars = 40
+    let maxBarWidth: CGFloat = 300
+    var marqueeChars = 40
     var marqueeText = ""
     var marqueeStart = Date()
     var marqueeFixed = false
@@ -234,7 +236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
                 suspensionBehavior: .deliverImmediately)
         }
         let m = Timer(timeInterval: Marquee.step, repeats: true) { [weak self] _ in
-            guard let s = self, s.marqueeText.count > s.maxChars else { return }
+            guard let s = self, s.marqueeText.count > s.marqueeChars else { return }
             s.renderTitle()
         }
         RunLoop.main.add(m, forMode: .common)
@@ -250,6 +252,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         reloadItem.title = L(.reloadLyrics)
         quitItem.title = L(.quit)
         rebuildSongMenu()
+        pushHeader()
+        syncMenuFlags()
+        pushPlayback()
+        pushLyric()
+    }
+
+    func pushHeader() {
         let failing = transKey == trackKey && transError != nil
         let st = transStatusText()
         MainActor.assumeIsolated {
@@ -271,8 +280,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
             mm.offsetText = String(format: "%+.2fs", offset)
             if mm.mode != displayMode { mm.mode = displayMode }
         }
-        syncMenuFlags()
-        pushPlayback()
-        pushLyric()
     }
 }

@@ -39,6 +39,7 @@ extension AppDelegate {
 
     func runTick() {
         tick()
+        if menuOpen { pushHeader() }
         scheduleTick()
     }
 
@@ -155,11 +156,16 @@ extension AppDelegate {
 
     func updateStatusWidth() {
         guard let b = item.button else { return }
-        if marqueeText.count > maxChars {
-            let font = b.font ?? NSFont.menuBarFont(ofSize: 0)
-            let sample = String(marqueeText.prefix(maxChars))
-            let w = NSAttributedString(string: sample, attributes: [.font: font]).size().width
-            item.length = ceil(w * 1.1) + 16 + (b.image != nil ? 24 : 0)
+        let font = b.font ?? NSFont.menuBarFont(ofSize: 0)
+        let extra: CGFloat = 16 + (b.image != nil ? 24 : 0)
+        func width(_ n: Int) -> CGFloat {
+            ceil(NSAttributedString(string: String(marqueeText.prefix(n)), attributes: [.font: font]).size().width * 1.1) + extra
+        }
+        var n = min(marqueeText.count, maxChars)
+        while n > 8 && width(n) > maxBarWidth { n -= 1 }
+        marqueeChars = n
+        if marqueeText.count > n {
+            item.length = width(n)
             marqueeFixed = true
         } else if marqueeFixed {
             item.length = NSStatusItem.variableLength
@@ -168,7 +174,7 @@ extension AppDelegate {
     }
 
     func renderTitle() {
-        let t = Marquee.window(marqueeText, width: maxChars, elapsed: Date().timeIntervalSince(marqueeStart))
+        let t = Marquee.window(marqueeText, width: marqueeChars, elapsed: Date().timeIntervalSince(marqueeStart))
         if item.button?.title != t { item.button?.title = t }
     }
 
