@@ -58,6 +58,9 @@ SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, 
 **Readings and study**
 - **Readings** under the original lyrics: romaji for Japanese (kanji are read with proper Japanese readings), Revised Romanization for Korean, **pinyin** with tone marks for Chinese, and transliteration for Russian, Ukrainian, Greek, and Hindi.
 - **Furigana** for Japanese: hiragana drawn above the kanji in the floating window (and as a hiragana line elsewhere), with the okurigana trimmed so that `賢い` shows `かしこ` over `賢` only. Choose between romaji and furigana in Settings > Appearance.
+- **Spaced-repetition review**: menu **Review…** (with the number of due cards) runs flashcards over your saved words. Rate each card Again, Hard, Good, or Easy (keys 1–4, Space reveals the answer); the next interval follows an SM-2 style schedule and is saved after every card. A word counts as known once its interval reaches 21 days. The review window lets you limit cards to one song, set how many new cards a session adds, and start from the meaning instead of the word. The window also shows today's reviews, 7-day accuracy, your streak, and how many words are known (kept in `reviewlog.json`). In the library, the plus button on a line lists its words with on-device meanings so you can save one with a click. The vocabulary manager's **Backup** menu exports and imports a single JSON file with words, review schedule, and review history; importing merges by word and keeps whichever copy was reviewed most recently. The vocabulary manager shows each word's status and due date, can filter to due words, and has a **Review now** button.
+- **Song library**: menu **Song library…** lists every song whose lyrics are cached, with search across titles, artists, and lyric text. Selecting a song shows its lyrics (with the cached translation when there is one) and works offline, without the song playing. From the library you can also translate the song on-device, play the fill-in-the-blank quiz, hear any line, and save words from a line, all without the song playing. Songs cached before this feature appear after they play once, because the cache did not store titles before.
+- **Most frequent words**: inside the library, each song lists its most repeated content words (stop words, fillers, and words you already saved are left out). One click translates a word on-device and saves it with an example line.
 - **Vocabulary manager**: a window (menu **Vocabulary…**) that lists your saved words with search, a per-song filter, statistics, editing of meanings, deletion with confirmation, and export of whatever is currently shown.
 - **Study mode**: click a word to see its meaning, **hear it spoken** with the built-in macOS voices, click a line to translate it, **double-click a line to jump to that moment in the song**, **loop a section** between two lines, take a **fill-in-the-blank quiz** built from the lyrics, save words to a vocabulary list, and export it to Anki (`SpotLyrics-vocab.tsv`).
 - **Romanization detection**: when the lyrics of a song look like Japanese romaji or romanized Korean, the app notices and offers to translate them as the right language.
@@ -122,6 +125,8 @@ Shows the active audio output. The `−` and `+` buttons shift the lyrics by 0.1
 | Item | What it does |
 |---|---|
 | **Study mode** | Opens the study window (see below) |
+| **Review…** | Spaced-repetition flashcards over saved vocabulary |
+| **Song library…** | Browse cached songs, read lyrics offline, save frequent words |
 | **This song** | Song language (shown when there is a foreign language to translate), Reload lyrics from LRCLIB, **Choose lyrics version…**, and **Copy & export** (copy the line or all lyrics, export as SRT or text) |
 | **Settings…** (⌘,) | Opens the Settings window |
 | **Quit** (⌘Q) | Quits the app |
@@ -239,6 +244,9 @@ Sources/
     Ruby.swift                  furigana, hiragana readings, pinyin, Cyrillic and Greek transliteration
     Anki.swift                  Anki package (.apkg) writer: SQLite collection, media, zip
     Vocab.swift                 saved vocabulary: storage, search, statistics, CSV and TSV export
+    SRS.swift                   spaced-repetition scheduling and review queue
+    ReviewLog.swift             daily review counts, study statistics, backup export and merge
+    WordFreq.swift              most frequent words per song, stop words, lemmatization
     Casual.swift                casual-style rules (id and en)
     TrackName.swift             title and artist cleanup for lyrics lookups
     LyricsOption.swift          lyrics versions for the picker, ranking
@@ -277,7 +285,8 @@ The `Core` folder deliberately imports neither Cocoa nor SwiftUI, so its logic c
 |---|---|
 | Lyrics cache | `~/Library/Application Support/SpotLyrics/Lyrics/` |
 | Translation cache | `~/Library/Application Support/SpotLyrics/*.tr.json` |
-| Vocabulary | `~/Library/Application Support/SpotLyrics/vocab.json` |
+| Vocabulary and review schedule | `~/Library/Application Support/SpotLyrics/vocab.json` |
+| Review history | `~/Library/Application Support/SpotLyrics/reviewlog.json` |
 | Event log and session marker | `~/Library/Application Support/SpotLyrics/diagnostics.log` and `session.json` |
 | Preferences | the `local.spotlyrics` domain (`defaults read local.spotlyrics`) |
 | Anki export | `~/Downloads/SpotLyrics-vocab.tsv` |
