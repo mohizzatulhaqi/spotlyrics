@@ -37,7 +37,7 @@ SpotLyrics reads the song playing in the Spotify desktop app or in Apple Music, 
 ## Features
 
 **Lyrics**
-- Synced lyrics from LRCLIB, shown line by line in the menu bar. Lines longer than 40 characters scroll slowly (marquee) instead of being cut off.
+- Synced lyrics from LRCLIB, shown line by line in the menu bar. Lines too wide for the menu bar slot (up to 40 characters, fewer for wide scripts such as Korean or Japanese) scroll slowly (marquee) instead of being cut off. The slot is capped so the menu below it keeps a constant width, and the player card stays live while the menu is open.
 - A **floating lyrics** window in karaoke style: a large current line, dimmer lines before and after it, and the translation underneath. It stays above other windows, follows you across Spaces, and can be dragged anywhere.
 - When LRCLIB has several versions of a song, the app prefers a version in the native script (Hangul, Kana) with a matching duration over a romanized one.
 - Works with **Spotify** and **Apple Music**. In automatic mode the app follows whichever player is running and playing, and you can force one in Settings.

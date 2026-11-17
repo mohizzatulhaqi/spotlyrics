@@ -69,7 +69,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var offset = 0.0
     var tickCount = 0
     let maxChars = 40
-    let maxBarWidth: CGFloat = 300
+    let maxBarWidth: CGFloat = 284
     var marqueeChars = 40
     var marqueeText = ""
     var marqueeStart = Date()
@@ -160,9 +160,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
             menuModel = mm
             let hv = NSHostingView(rootView: HeaderCard(m: mm))
             hv.frame = NSRect(x: 0, y: 0, width: 300, height: 330)
+            hv.autoresizingMask = [.width]
             headerItem.view = hv
             let ov = NSHostingView(rootView: OffsetRow(m: mm))
             ov.frame = NSRect(x: 0, y: 0, width: 300, height: 34)
+            ov.autoresizingMask = [.width]
             offsetItem.view = ov
         }
         learnItem.image = NSImage(systemSymbolName: "book", accessibilityDescription: nil)

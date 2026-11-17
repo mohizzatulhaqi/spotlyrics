@@ -246,11 +246,11 @@ struct HeaderCard: View {
             }
         }
         .padding(14)
-        .frame(width: 284, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
         .background { backdrop }
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .padding(8)
-        .frame(width: 300)
+        .frame(minWidth: 300, maxWidth: .infinity)
         .fixedSize(horizontal: false, vertical: true)
         .background(GeometryReader { g in Color.clear.preference(key: HeightKey.self, value: g.size.height) })
         .onPreferenceChange(HeightKey.self) { m.onHeight($0) }
@@ -280,6 +280,6 @@ struct OffsetRow: View {
             if m.offsetText != "+0.00s" { round("arrow.counterclockwise") { m.onReset() } }
         }
         .padding(.horizontal, 16)
-        .frame(width: 300, height: 34)
+        .frame(minWidth: 300, maxWidth: .infinity, minHeight: 34, maxHeight: 34)
     }
 }
