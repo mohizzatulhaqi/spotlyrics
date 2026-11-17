@@ -12,6 +12,7 @@ extension AppDelegate {
                     self?.learn.speaker.speak(e.word, language: e.lang ?? VocabExporter.language(for: e) ?? "en")
                 }
                 m.onChanged = { [weak self] in self?.learn.updateCount() }
+                m.onReview = { [weak self] in self?.openReview() }
                 vocabModel = m
                 let hc = NSHostingController(rootView: VocabView(m: m))
                 hc.sizingOptions = []
@@ -30,7 +31,11 @@ extension AppDelegate {
     }
 
     func vocabChanged() {
-        MainActor.assumeIsolated { vocabModel?.reload() }
+        MainActor.assumeIsolated {
+            vocabModel?.reload()
+            libraryModel?.refreshDetail()
+        }
+        refreshReviewTitles()
         learn.updateCount()
     }
 }

@@ -9,12 +9,14 @@ final class VocabModel: ObservableObject {
     @Published var selection = Set<String>()
     @Published var status = ""
     @Published var busy = false
+    @Published var dueOnly = false
     @Published var langTick = 0
     @Published var reverse = Prefs.ankiReverse {
         didSet { Prefs.ankiReverse = reverse }
     }
     var onSpeak: (VocabEntry) -> Void = { _ in }
     var onChanged: () -> Void = {}
+    var onReview: () -> Void = {}
     private var saveWork: DispatchWorkItem?
 
     func reload() {
@@ -23,7 +25,11 @@ final class VocabModel: ObservableObject {
         if !song.isEmpty && !all.contains(where: { $0.song == song }) { song = "" }
     }
 
-    var visible: [VocabEntry] { Vocab.filter(all, query: query, song: song) }
+    var visible: [VocabEntry] {
+        let base = Vocab.filter(all, query: query, song: song)
+        return dueOnly ? base.filter { SRS.isDue($0, now: Date()) } : base
+    }
+    var dueCount: Int { SRS.dueCount(all, now: Date(), newLimit: Prefs.reviewNewPerSession) }
     var songs: [String] { Vocab.songs(all) }
     var stats: (total: Int, today: Int, week: Int) { Vocab.stats(all) }
 
@@ -39,6 +45,38 @@ final class VocabModel: ObservableObject {
         let work = DispatchWorkItem { Vocab.setMeaning(id: id, text) }
         saveWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: work)
+    }
+
+    func exportBackup() {
+        let panel = NSSavePanel()
+        panel.nameFieldStringValue = Backup.fileName()
+        panel.allowedContentTypes = [.json]
+        guard panel.runModal() == .OK, let url = panel.url,
+              let data = Backup.encode(vocab: Vocab.load(), log: ReviewLog.load()) else { return }
+        do {
+            try data.write(to: url, options: .atomic)
+            status = L(.backupExported, url.lastPathComponent)
+        } catch {
+            status = error.localizedDescription
+        }
+    }
+
+    func importBackup() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        guard let data = try? Data(contentsOf: url), let p = Backup.decode(data) else {
+            status = L(.backupInvalid)
+            return
+        }
+        saveWork?.perform()
+        let merged = Backup.merge(Vocab.load(), with: p.vocab)
+        Vocab.save(merged.entries)
+        ReviewLog.save(ReviewLog.merge(ReviewLog.load(), p.log))
+        reload()
+        status = L(.backupImported, merged.result.added, merged.result.updated, merged.result.total)
+        onChanged()
     }
 
     func deleteSelected() {
@@ -112,6 +150,7 @@ struct VocabView: View {
                 }
                 .labelsHidden()
                 .frame(width: 240)
+                Toggle(L(.vocabDueOnly), isOn: $m.dueOnly).toggleStyle(.checkbox)
             }
             .padding(12)
             Divider()
@@ -124,6 +163,14 @@ struct VocabView: View {
                     TableColumn(L(.colWord), value: \.word)
                     TableColumn(L(.colMeaning), value: \.meaning)
                     TableColumn(L(.colSong), value: \.song)
+                    TableColumn(L(.colStatus)) { e in Text(L(SRS.statusKey(e))) }
+                    TableColumn(L(.colDue)) { e in
+                        if SRS.state(of: e) == nil || SRS.isDue(e, now: Date()) {
+                            Text(L(.vocabDueNow)).foregroundStyle(.orange)
+                        } else if let d = e.due {
+                            Text(d, style: .date)
+                        }
+                    }
                     TableColumn(L(.colAdded)) { e in Text(e.date, style: .date) }
                 }
                 .frame(minHeight: 160)
@@ -135,6 +182,7 @@ struct VocabView: View {
                 Text(L(.vocabStats, s.total, s.today, s.week)).font(.caption).foregroundStyle(.secondary)
                 Toggle(L(.vocabReverse), isOn: $m.reverse).toggleStyle(.checkbox).font(.caption)
                 Spacer()
+                Button(m.dueCount > 0 ? "\(L(.vocabReviewNow)) (\(m.dueCount))" : L(.vocabReviewNow)) { m.onReview() }
                 if m.busy { ProgressView().controlSize(.small) }
                 Menu(m.visible.count == 1 ? L(.vocabExportOne) : L(.vocabExportN, m.visible.count)) {
                     Button(L(.exportApkgItem)) { m.export(.apkg) }
@@ -143,6 +191,11 @@ struct VocabView: View {
                 }
                 .fixedSize()
                 .disabled(m.visible.isEmpty || m.busy)
+                Menu(L(.backupMenu)) {
+                    Button(L(.backupExport)) { m.exportBackup() }
+                    Button(L(.backupImport)) { m.importBackup() }
+                }
+                .fixedSize()
                 Button(L(.vocabDelete), role: .destructive) { confirm = true }
                     .disabled(m.selection.isEmpty)
             }

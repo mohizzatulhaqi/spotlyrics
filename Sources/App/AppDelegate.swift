@@ -92,6 +92,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     var vocabWindow: NSWindow?
     var vocabModel: VocabModel?
     let vocabItem = NSMenuItem(title: L(.vocabMenu), action: #selector(openVocabAction), keyEquivalent: "")
+    let reviewItem = NSMenuItem(title: L(.reviewMenu), action: #selector(openReviewAction), keyEquivalent: "")
+    let libraryItem = NSMenuItem(title: L(.libMenu), action: #selector(openLibraryAction), keyEquivalent: "")
+    var reviewWindow: NSWindow?
+    var reviewModel: ReviewModel?
+    var libraryWindow: NSWindow?
+    var libraryModel: LibraryModel?
+    var libQuizWindow: NSWindow?
+    var libQuizModel: QuizModel?
     var versionModel: VersionModel?
     var menuOpen = false
     var lastPosMs = 0, lastDurMs = 0
@@ -157,6 +165,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         }
         learnItem.image = NSImage(systemSymbolName: "book", accessibilityDescription: nil)
         vocabItem.image = NSImage(systemSymbolName: "text.book.closed", accessibilityDescription: nil)
+        reviewItem.image = NSImage(systemSymbolName: "rectangle.stack", accessibilityDescription: nil)
+        libraryItem.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: nil)
         songItem.image = NSImage(systemSymbolName: "music.note.list", accessibilityDescription: nil)
         songItem.submenu = songMenu
         reloadItem.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
@@ -165,7 +175,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         if hotKeysOn { registerHotKeys() }
         infoItem.isHidden = true
         let all: [NSMenuItem] = [infoItem, headerItem, .separator(), offsetItem, .separator(),
-                                 learnItem, vocabItem, songItem, .separator(), settingsItem]
+                                 learnItem, vocabItem, reviewItem, libraryItem, songItem, .separator(), settingsItem]
         for m in all {
             if m.action != nil { m.target = self }
             menu.addItem(m)
@@ -234,6 +244,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
         refreshDevice()
         learnItem.title = L(.learnMode)
         vocabItem.title = L(.vocabMenu)
+        refreshReviewTitles()
         songItem.title = L(.thisSong)
         settingsItem.title = L(.settingsMenu)
         reloadItem.title = L(.reloadLyrics)

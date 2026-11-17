@@ -90,6 +90,13 @@ extension AppDelegate {
         L10n.refresh()
         learnItem.title = L(.learnMode)
         vocabItem.title = L(.vocabMenu)
+        refreshReviewTitles()
+        reviewWindow?.title = L(.reviewTitle)
+        libraryWindow?.title = L(.libTitle)
+        MainActor.assumeIsolated {
+            reviewModel?.langTick += 1
+            libraryModel?.langTick += 1
+        }
         songItem.title = L(.thisSong)
         settingsItem.title = L(.settingsMenu)
         reloadItem.title = L(.reloadLyrics)

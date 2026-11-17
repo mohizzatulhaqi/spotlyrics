@@ -11,6 +11,7 @@ final class QuizModel: ObservableObject {
     @Published var total = 0
     @Published var empty = false
     @Published var langTick = 0
+    @Published var canPlay = true
     var onPlay: (Int) -> Void = { _ in }
     var onSpeak: (Int) -> Void = { _ in }
     private var lines: [String] = []
@@ -111,7 +112,7 @@ struct QuizView: View {
                         .keyboardShortcut(.defaultAction)
                         .disabled(m.status == 1 || m.status == 3)
                     Button(L(.quizShow)) { m.reveal() }.disabled(m.status == 1 || m.status == 3)
-                    Button(L(.quizPlay)) { m.onPlay(it.lineIndex) }
+                    if m.canPlay { Button(L(.quizPlay)) { m.onPlay(it.lineIndex) } }
                     Button(L(.quizSpeak)) { m.onSpeak(it.lineIndex) }
                     Spacer()
                     Button(L(.quizNext)) { m.next() }
