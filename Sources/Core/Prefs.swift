@@ -76,6 +76,10 @@ enum Prefs {
         get { UserDefaults.standard.object(forKey: "reviewNewPerSession") as? Int ?? 10 }
         set { UserDefaults.standard.set(newValue, forKey: "reviewNewPerSession") }
     }
+    static var barReading: Bool {
+        get { UserDefaults.standard.bool(forKey: "barReading") }
+        set { UserDefaults.standard.set(newValue, forKey: "barReading") }
+    }
     static var reviewReverse: Bool {
         get { UserDefaults.standard.bool(forKey: "reviewReverse") }
         set { UserDefaults.standard.set(newValue, forKey: "reviewReverse") }

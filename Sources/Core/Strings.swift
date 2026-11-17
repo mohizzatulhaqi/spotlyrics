@@ -38,6 +38,7 @@ enum S: String, CaseIterable {
     case vocabDeleteOne, vocabExportOne
     case vocabDelete, vocabDeleteAsk, vocabDeleteNote, vocabPickOne, vocabStats, vocabReverse, vocabExportN
     case vocabLineLabel, vocabMeaningLabel
+    case barReadingToggle, barReadingNote
     case backupMenu, backupExport, backupImport, backupExported, backupImported, backupInvalid, reviewStats
     case reviewNewCount, reviewReverseOpt, statusNew, statusLearning, statusKnown, colStatus, colDue, vocabDueOnly, vocabReviewNow, vocabDueNow, libTranslate, libQuiz, libLineWords, libTransFailed, libSpeakLine
     case reviewMenu, reviewMenuDue, reviewTitle, reviewShow, reviewAgain, reviewHard, reviewGood, reviewEasy, reviewDone, reviewNone, reviewLeft, reviewHint, libMenu, libTitle, libSearch, libEmpty, libPick, libCount, libNoMatch, libTopWords, libNoWords, libAddWord, libWordCount, libTranslating, libWordSaved, libWordFailed, libUnsynced, libRemove, libRemoveAsk, libRemoveNote
@@ -268,6 +269,8 @@ extension L10n {
         .vocabExportN: "Ekspor %d kata",
         .vocabLineLabel: "Kalimat",
         .vocabMeaningLabel: "Arti",
+        .barReadingToggle: "Tampilkan cara baca di menu bar",
+        .barReadingNote: "Mengganti teks asli (Hangul, kana, dan sebagainya) dengan huruf Latin di menu bar.",
         .backupMenu: "Cadangan",
         .backupExport: "Ekspor cadangan…",
         .backupImport: "Impor cadangan…",
@@ -564,6 +567,8 @@ extension L10n {
         .vocabExportN: "Export %d words",
         .vocabLineLabel: "Example line",
         .vocabMeaningLabel: "Meaning",
+        .barReadingToggle: "Show readings in the menu bar",
+        .barReadingNote: "Replaces the original text (Hangul, kana, and so on) with Latin letters in the menu bar.",
         .backupMenu: "Backup",
         .backupExport: "Export backup…",
         .backupImport: "Import backup…",

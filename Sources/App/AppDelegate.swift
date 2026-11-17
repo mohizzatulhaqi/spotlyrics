@@ -71,6 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, @unche
     let maxChars = 40
     let maxBarWidth: CGFloat = 284
     var marqueeChars = 40
+    var latin: [String] = []
     var marqueeText = ""
     var marqueeStart = Date()
     var marqueeFixed = false

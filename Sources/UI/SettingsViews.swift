@@ -12,6 +12,9 @@ final class SettingsModel: ObservableObject {
     @Published var romaji = Prefs.showRomaji {
         didSet { if !syncing { Prefs.showRomaji = romaji; onRomaji() } }
     }
+    @Published var barReading = Prefs.barReading {
+        didSet { if !syncing { Prefs.barReading = barReading; onBarReading() } }
+    }
     @Published var menuCover = Prefs.menuBarCover {
         didSet { if !syncing { Prefs.menuBarCover = menuCover; onMenuCover() } }
     }
@@ -68,6 +71,7 @@ final class SettingsModel: ObservableObject {
     var onLanguage: () -> Void = {}
     var onCasual: () -> Void = {}
     var onRomaji: () -> Void = {}
+    var onBarReading: () -> Void = {}
     var onAccent: () -> Void = {}
     var onReadingStyle: () -> Void = {}
     var onMenuCover: () -> Void = {}
@@ -91,6 +95,7 @@ final class SettingsModel: ObservableObject {
         player = Prefs.playerChoice
         casual = Prefs.casual
         romaji = Prefs.showRomaji
+        barReading = Prefs.barReading
         accent = Prefs.coverAccent
         readingStyle = Prefs.readingStyle
         menuCover = Prefs.menuBarCover
@@ -168,6 +173,8 @@ struct SettingsView: View {
                 Toggle(L(.romajiToggle), isOn: $s.romaji)
                 Text(L(.romajiNote))
                     .font(.caption).foregroundStyle(.secondary)
+                Toggle(L(.barReadingToggle), isOn: $s.barReading)
+                Text(L(.barReadingNote)).font(.caption).foregroundStyle(.secondary)
                 Picker(L(.readingStyleLabel), selection: $s.readingStyle) {
                     Text(L(.readingRomaji)).tag("romaji")
                     Text(L(.readingFurigana)).tag("furigana")

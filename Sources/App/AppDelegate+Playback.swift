@@ -332,6 +332,7 @@ extension AppDelegate {
             return
         }
         var text = idx.map { lines[$0].text.isEmpty ? "♪" : lines[$0].text } ?? "♪"
+        if Prefs.barReading, let n = idx, n < latin.count, !latin[n].isEmpty { text = latin[n] }
         if displayMode != "orig", transKey == trackKey, let n = idx, n < trans.count, !trans[n].isEmpty {
             text = displayMode == "both" ? text + " · " + trans[n] : trans[n]
         }

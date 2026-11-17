@@ -18,6 +18,7 @@ extension AppDelegate {
         trans = []
         lineLangs = []
         romaji = []
+        latin = []
         transKey = ""
         transError = nil
     }
@@ -47,6 +48,7 @@ extension AppDelegate {
                 let sm = SettingsModel()
                 sm.onCasual = { [weak self] in self?.casualChanged() }
                 sm.onRomaji = { [weak self] in self?.romajiChanged() }
+                sm.onBarReading = { [weak self] in self?.runTick() }
                 sm.onReadingStyle = { [weak self] in self?.readingStyleChanged() }
                 sm.onAccent = { [weak self] in self?.accentChanged() }
                 sm.onMenuCover = { [weak self] in
@@ -255,6 +257,7 @@ extension AppDelegate {
     func readingStyleChanged() {
         let style = Prefs.readingStyle
         romaji = zip(lines.map { $0.text }, lineLangs).map { Readings.reading($0, lang: $1, style: style) }
+        latin = zip(lines.map { $0.text }, lineLangs).map { Readings.reading($0, lang: $1, style: "romaji") }
         floatSig = ""
         learnKey = ""
         syncMenuFlags()
@@ -296,6 +299,7 @@ extension AppDelegate {
         let langs = Detect.perLine(texts, override: rom ?? ov)
         lineLangs = langs
         romaji = zip(texts, langs).map { Readings.reading($0, lang: $1, style: Prefs.readingStyle) }
+        latin = zip(texts, langs).map { Readings.reading($0, lang: $1, style: "romaji") }
         if !langs.contains(where: { !$0.isEmpty && !Lang.same($0, target) }) {
             trans = Array(repeating: "", count: texts.count)
             return
